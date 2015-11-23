@@ -1,0 +1,15 @@
+[Unit]
+Description=OpenContrail ifmap-server
+
+After=docker.service
+Requires=contrail-api.service 
+
+[Service]
+ExecStartPre=/usr/bin/docker pull opencontrail/ifmap-server:2.20
+ExecStart=/usr/bin/docker run --name ifmap-server -e IFMAP_BASIC_PORT=8444 -e IFMAP_CERT_PORT=8445 --net=host -v /var/log/contrail:/var/log/contrail:Z opencontrail/ifmap-server:2.20
+ExecStop=/usr/bin/docker kill ifmap-server
+#ExecStop=/usr/bin/docker rm ifmap-server
+#Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

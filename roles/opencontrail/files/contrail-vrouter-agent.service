@@ -1,0 +1,15 @@
+[Unit]
+Description=OpenContrail VRouter agent
+After=docker.service
+Requires=docker.service
+
+[Service]
+ExecStartPre=/usr/bin/docker pull opencontrail/vrouter-agent:2.20
+ExecStartPre=-/usr/bin/docker rm vrouter-agent
+ExecStart=/usr/bin/docker run --name vrouter-agent --privileged=true --net=host -v /etc/contrail:/etc/contrail:Z -v /var/log/contrail:/var/log/contrail:Z opencontrail/vrouter-agent:2.20 /usr/bin/contrail-vrouter-agent
+ExecStopPre=/usr/bin/docker kill vrouter-agent
+#ExecStop=/usr/bin/docker rm vrouter-agent
+#Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

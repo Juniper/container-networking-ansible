@@ -1,0 +1,17 @@
+[Unit]
+Description=Kubernetes OpenContrail plugin
+
+After=contrail-api.service {{ opencontrail_master_kube_service }}.service
+Requires=contrail-api.service {{ opencontrail_master_kube_service }}.service
+
+# TODO: replace roque/ with opencontrail/
+
+[Service]
+ExecStartPre=/usr/bin/docker pull roque/kube-network-manager:origin
+ExecStartPre=-/usr/bin/docker rm kube-network-manager
+ExecStart=/usr/bin/docker run --name kube-network-manager --net=host -v {{ opencontrail_all_kube_config_dir }}:/etc/kubernetes:Z roque/kube-network-manager:origin
+ExecStop=/usr/bin/docker kill kube-network-manager
+#Restart=on-failure
+
+[Install]
+WantedBy={{ opencontrail_master_kube_service }}.service

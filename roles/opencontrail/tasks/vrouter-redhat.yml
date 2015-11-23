@@ -1,0 +1,13 @@
+---
+- name: Interface up/down scripts
+  copy: src={{ item }} dest=/etc/sysconfig/network-scripts mode=755
+  with_items:
+    - ifup-vhost
+    - ifdown-vhost
+
+- name: Interface configuration file (physical)
+  template: src=ifcfg-eth.j2 dest="/etc/sysconfig/network-scripts/ifcfg-{{ opencontrail_host_interface }}"
+
+- name: Interface configuration file (vhost0)
+  template: src=ifcfg-vhost0.j2 dest=/etc/sysconfig/network-scripts/ifcfg-vhost0
+

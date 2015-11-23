@@ -1,0 +1,16 @@
+[Unit]
+Description=OpenContrail schema transformer
+
+After=contrail-api.service zookeeper.service cassandra.service
+Requires=contrail-api.service zookeeper.service cassandra.service
+
+[Service]
+ExecStartPre=/usr/bin/docker pull opencontrail/config:2.20
+ExecStartPre=-/usr/bin/docker rm contrail-schema
+ExecStart=/usr/bin/docker run --name contrail-schema --net=host -v /etc/contrail:/etc/contrail:Z -v /var/log/contrail:/var/log/contrail:Z opencontrail/config:2.20 /usr/bin/contrail-schema --conf_file /etc/contrail/contrail-schema.conf
+ExecStop=/usr/bin/docker kill contrail-schema
+#ExecStop=/usr/bin/docker rm contrail-schema
+#Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,16 @@
+[Unit]
+Description=OpenContrail control-node
+
+After=ifmap-server.service
+Requires=ifmap-server.service
+
+[Service]
+ExecStartPre=/usr/bin/docker pull opencontrail/control:2.20
+ExecStartPre=-/usr/bin/docker rm contrail-control
+ExecStart=/usr/bin/docker run --name contrail-control --net=host -v /etc/contrail:/etc/contrail:Z -v /var/log/contrail:/var/log/contrail:Z --cap-add=NET_BIND_SERVICE opencontrail/control:2.20 /usr/bin/contrail-control
+ExecStop=/usr/bin/docker kill contrail-control
+#ExecStop=/usr/bin/docker rm contrail-control
+#Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

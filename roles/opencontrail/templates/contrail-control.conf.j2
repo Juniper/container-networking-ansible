@@ -1,0 +1,8 @@
+[DEFAULT]
+hostip={{ opencontrail_host_address }}
+hostname={{ ansible_hostname }}
+
+[IFMAP]
+server_url=https://localhost:{{ opencontrail_master_ifmap_port if opencontrail_master_ifmap_port is defined else 8443 }}
+user=control-node
+password=control-node

@@ -1,0 +1,13 @@
+[CONTROL-NODE]
+server={{ opencontrail_master_host_addresses }}
+
+[VIRTUAL-HOST-INTERFACE]
+name=vhost0
+ip={{ opencontrail_host_ipaddr }}
+physical_interface={{ opencontrail_host_interface }}
+{% if opencontrail_host_gateway -%}
+gateway={{ opencontrail_host_gateway }}
+{% endif -%}
+
+[HYPERVISOR]
+type=kvm

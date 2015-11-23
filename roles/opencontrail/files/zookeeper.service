@@ -1,0 +1,16 @@
+[Unit]
+Description=Apache Zookeeper
+After=docker.service
+Requires=docker.service
+
+[Service]
+ExecStartPre=/usr/bin/docker pull mesoscloud/zookeeper:3.4.6
+ExecStartPre=/usr/bin/mkdir -p /var/lib/zookeeper
+ExecStartPre=-/usr/bin/docker rm zookeeper
+ExecStart=/usr/bin/docker run --name zookeeper --net=host -v /var/lib/zookeeper:/var/lib/zookeeper:Z -e MYID="1" -e SERVERS="localhost" mesoscloud/zookeeper:3.4.6
+ExecStop=/usr/bin/docker kill zookeeper
+ExecStop=/usr/bin/docker rm zookeeper
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

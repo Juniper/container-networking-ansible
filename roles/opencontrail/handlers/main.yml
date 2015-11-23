@@ -1,0 +1,32 @@
+---
+# The kubernetes role invokes restart daemons. It must be defined here
+# since the opencontrail playbook depends on that role to setup basic
+# variables such as the kubernetes configuration file directory.
+- name: restart daemons
+  command: /bin/true
+
+- name: reload systemd
+  command: systemctl --system daemon-reload
+
+- name: restart contrail-vrouter-agent
+  service: name=contrail-vrouter-agent state=restarted
+
+- name: restart contrail-control
+  shell: docker ps | awk '/opencontrail\/control/ {print $1;}'
+  register: control_node_id
+  notify:
+    - docker restart contrail-control
+
+- name: docker restart contrail-control
+  command: docker restart {{ control_node_id.stdout }}
+  when: control_node_id.rc == 0 and control_node_id.stdout != ""
+
+- name: restart kube-network-manager
+  shell: docker ps | awk '/opencontrail\/kube-network-manager/ {print $1;}'
+  register: network_manager_id
+  notify:
+    - docker restart kube-network-manager
+
+- name: docker restart kube-network-manager
+  command: docker restart {{ network_manager_id.stdout }}
+  when: network_manager_id.rc == 0 and network_manager_id.stdout != ""

@@ -1,0 +1,82 @@
+---
+
+# note: ansible localhost requires python-netaddr to be installed
+
+- name: Redhat-style interface configuration
+  include: nodes-redhat.yml
+  when: ansible_os_family == "RedHat"
+
+- name: Agent configuration
+  template: src=contrail-vrouter-agent.conf.node.j2 dest=/etc/contrail/contrail-vrouter-agent.conf
+
+- name: Ensure log directory exists
+  file: path=/var/log/contrail state=directory
+
+- name: Create vrouter agent service
+  copy: src=contrail-vrouter-agent.service dest=/etc/systemd/system
+  notify:
+    - reload systemd
+  when: not (ansible_distribution == "Ubuntu" and ansible_distribution_major_version|int < 15)
+
+- name: VRouter agent upstart
+  copy:
+    src: contrail-vrouter-agent.upstart
+    dest: /etc/init/contrail-vrouter-agent.conf
+    mode: 0644
+  when: ansible_distribution == "Ubuntu" and ansible_distribution_major_version|int < 15
+
+- name: Enable vhost0 interface
+  command: ifup vhost0
+
+- name: Start vrouter agent
+  service: name=contrail-vrouter-agent enabled=yes state=started
+
+# python-pip is provided by the epel repository on CentOS 7.
+- name: epel 7
+  yum: name="http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm" state=present
+  when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+
+- name: Ensure python pip is installed
+  action: "{{ ansible_pkg_mgr }}"
+  args:
+    name: python-pip
+    state: latest
+
+- name: bridge-utils
+  action: "{{ ansible_pkg_mgr }}"
+  args:
+    name: bridge-utils
+    state: latest
+
+- name: ethtool
+  action: "{{ ansible_pkg_mgr }}"
+  args:
+    name: ethtool
+    state: latest
+
+- name: Install plugin
+  pip: name=opencontrail-kubelet extra_args="{% if opencontrail_build_http_proxy %}--proxy={{ opencontrail_build_http_proxy }}{% endif %}"
+
+- name: Create plugin directory
+  file:
+    path: /usr/libexec/kubernetes/kubelet-plugins/net/exec/opencontrail
+    state: directory
+
+- name: Default plugin path
+  set_fact:
+    opencontrail_plugin_path: "/usr/bin/opencontrail-kubelet-plugin"
+
+- name: Check for plugin in /usr/local/bin
+  stat: path="/usr/local/bin/opencontrail-kubelet-plugin"
+  register: usr_local_stat
+
+- name: Override plugin path
+  set_fact:
+    opencontrail_plugin_path: "/usr/local/bin/opencontrail-kubelet-plugin"
+  when: usr_local_stat.stat.exists
+
+- name: Create symlink for plugin
+  file:
+     src: "{{ opencontrail_plugin_path }}"
+     dest: /usr/libexec/kubernetes/kubelet-plugins/net/exec/opencontrail/opencontrail
+     state: link

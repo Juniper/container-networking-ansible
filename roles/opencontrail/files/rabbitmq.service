@@ -1,0 +1,16 @@
+[Unit]
+Description=RabbitMQ
+
+After=docker.service
+Requires=docker.service
+
+[Service]
+ExecStartPre=/usr/bin/docker pull rabbitmq:3.5.4
+ExecStartPre=-/usr/bin/docker rm rabbitmq
+ExecStart=/usr/bin/docker run --name rabbitmq --net=host -e RABBITMQ_ERLANG_COOKIE='opencontrail' rabbitmq:3.5.4
+ExecStop=/usr/bin/docker kill rabbitmq
+ExecStop=/usr/bin/docker rm rabbitmq
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

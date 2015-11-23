@@ -1,0 +1,13 @@
+---
+- name: Create directory
+  file: path=/tmp/.ansible/build/{{ opencontrail_host_kernel_tag }} state=directory
+  delegate_to: "{{ groups['masters'][0] }}"
+  run_once: true
+
+- include: kmod-build-redhat.yml
+  when: ansible_os_family == "RedHat"
+
+- include: kmod-build-ubuntu.yml
+  when: ansible_distribution == "Ubuntu"
+
+- include: kmod-artifacts.yml
