@@ -58,11 +58,10 @@
     regexp: "^networking: "
     line: "networking: opencontrail"
 
-- name: Rename opencontrail-provision to opencontrail_provision
-  replace:
-    dest: "{{ path_src }}/contrib/ansible/group_vars/all.yml"
-    regexp: 'opencontrail-provision'
-    replace: 'opencontrail_provision'
+- name: Patch cluster.yml
+  patch:
+    src: cluster.patch
+    dest: "{{ path_src }}/contrib/ansible/cluster.yml"
 
 # - name: Configure address resolution
 #   command: ansible-playbook -i inventory resolution.yml
