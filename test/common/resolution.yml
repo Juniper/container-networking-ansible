@@ -1,0 +1,14 @@
+---
+ - name: address resolution
+   hosts: all
+   sudo: yes
+   tasks:
+     - name: Set hostname
+       hostname: name="{{ inventory_hostname }}"
+
+     - name: Add entries to /etc/hosts
+       lineinfile:
+         dest=/etc/hosts
+         regexp="^{{ hostvars[item].ansible_ssh_host }}"
+         line="{{ hostvars[item].ansible_ssh_host }} {{ item }}"
+       with_items: groups['all']

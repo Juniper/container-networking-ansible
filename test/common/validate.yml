@@ -1,0 +1,22 @@
+---
+- name: sanity check the cluster
+  hosts: masters
+  tasks:
+    - name: Check the number of XMPP sessions
+      shell: "netstat -nt | grep 5269 | wc -l"
+      register: xmpp_sessions
+
+    - assert:
+        that:
+          - xmpp_sessions.stdout == "3"
+
+    # Ensure that the DNS resolver is operational
+    - name: Check kube-system pods
+      shell: "kubectl --namespace=kube-system get pods | awk '/kube-dns-v9/{ print $2 ;}'"
+      register: dns_status
+
+    - assert:
+        that:
+          - dns_status.stdout == "4/4"
+
+    

@@ -20,7 +20,11 @@
   sudo: yes
   roles:
     - deployer_install
+  tags:
+    - deployer-install
 
 - hosts: management
   roles:
-    - deploy
+    - workspace
+  tags:
+    - workspace

@@ -1,0 +1,28 @@
+---
+- name: fix kubelet schema.json permissins
+  hosts: masters
+  sudo: yes
+  tasks:
+    - file: path="/tmp/kubectl.schema/v1.1.1/api/v1/schema.json" mode=0644 state=file
+
+- name: run examples
+  hosts: masters
+  tasks:
+    - file: path="~/guestbook" state=directory
+
+    # https://raw.githubusercontent.com/kubernetes/kubernetes/master/examples/guestbook-go
+    - name: download files
+      get_url: url="https://raw.githubusercontent.com/pedro-r-marques/examples/master/k8s-guestbook/{{ item }}" dest="~/guestbook"
+      with_items:
+        - guestbook-namespace.json
+        - guestbook-controller.json
+        - guestbook-service.json
+        - redis-master-controller.json
+        - redis-master-service.json
+        - redis-slave-controller.json
+        - redis-slave-service.json
+      run_once: true
+
+    - name: Create example
+      command: kubectl create -f "~/guestbook"
+      run_once: true
