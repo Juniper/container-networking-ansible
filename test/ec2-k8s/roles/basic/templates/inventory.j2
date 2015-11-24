@@ -1,0 +1,29 @@
+[opencontrail:children]
+masters
+nodes
+gateways
+ 
+[opencontrail:vars]
+localBuildOutput={{ path_tmp }}/kubernetes/server/bin
+opencontrail_public_subnet={{ k8s_public_subnet }}
+
+[masters]
+{% for instance in k8s_master.tagged_instances %}
+k8s-master-{{ loop.index }} ansible_ssh_host={{ instance.private_ip }} ansible_ssh_user={{ ssh_user }}
+{% endfor %}
+
+[etcd]
+{% for instance in k8s_master.tagged_instances %}
+k8s-master-{{ loop.index }} ansible_ssh_host={{ instance.private_ip }} ansible_ssh_user={{ ssh_user }}
+{% endfor %}
+
+[gateways]
+{% for instance in k8s_gateway.tagged_instances %}
+k8s-gateway-{{ loop.index }} ansible_ssh_host={{ instance.private_ip }} ansible_ssh_user={{ ssh_user }}
+{% endfor %}
+
+[nodes]
+{% for instance in k8s_nodes.tagged_instances %}
+k8s-node-{{ loop.index }} ansible_ssh_host={{ instance.private_ip }} ansible_ssh_user={{ ssh_user }}
+{% endfor %}
+

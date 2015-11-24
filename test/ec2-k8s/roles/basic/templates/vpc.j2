@@ -1,0 +1,9 @@
+---
+vpc:
+  id: {{ vpc.vpc_id }}
+  subnets:
+{% for subnet in vpc.subnets %}
+    - {{ subnet.id }}
+{% endfor %}
+  gateway:
+    id: {{ k8s_gateway.tagged_instances[0].id }}

@@ -1,0 +1,13 @@
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  tasks:
+    - name: Delete virtual machines
+      ec2:
+        state: absent
+        region: "{{ aws_region }}"
+        instance_ids: "{{ hostvars[item].id }}"
+      with_items: "{{ groups['all'] | difference(['localhost']) }}"
+
+  vars:
+    aws_region: us-west-1

@@ -1,0 +1,18 @@
+[management]
+{{ k8s_management.tagged_instances[0].public_dns_name }} id={{ k8s_management.tagged_instances[0].id }}
+
+[masters]
+{% for instance in k8s_master.tagged_instances %}
+k8s-master-{{ loop.index }} id={{ instance.id }}
+{% endfor %}
+
+[gateways]
+{% for instance in k8s_gateway.tagged_instances %}
+k8s-gateway-{{ loop.index }} id={{ instance.id }}
+{% endfor %}
+
+[nodes]
+{% for instance in k8s_nodes.tagged_instances %}
+k8s-node-{{ loop.index }} id={{ instance.id }}
+{% endfor %}
+

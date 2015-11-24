@@ -1,0 +1,26 @@
+#
+# This playbook expects AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY to be
+# defined.
+# The AIM user needs priviledges to manage VPCs and EC2 instances.
+#
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  roles:
+    - basic
+  tags:
+    - create
+  vars:
+    job_id: 01
+    aws_region: us-west-1
+    # trusty hvm:ebs us-west-1
+    ec2_image: ami-f898f698
+
+- hosts: management
+  sudo: yes
+  roles:
+    - deployer_install
+
+- hosts: management
+  roles:
+    - deploy
