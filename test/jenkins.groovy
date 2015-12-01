@@ -31,12 +31,11 @@ def test_noop = {
     }
 }
 
-def tests = [
-    test_ec2_k8s_basic,
-    test_noop
-]
-
 def getTestMatrix() {
+    def tests = [
+        test_ec2_k8s_basic,
+        test_noop
+    ]
     return tests
 }
 
