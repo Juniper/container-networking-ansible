@@ -21,11 +21,11 @@ def test_ec2_k8s_basic = {
             sh("ansible-playbook -i localhost playbook.yml --private-key=$SSH_PRIVATE_KEY --tags=workspace")
         }
 
-        # ssh steps
-            // provision cluster
-            // validate
-            // example application
-            // verify
+        // ssh client steps:
+        // provision cluster
+        // validate
+        // example application
+        // verify
 
         withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'k8s-provisioner', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY']]) {
             // delete cluster
