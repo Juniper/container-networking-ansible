@@ -1,4 +1,6 @@
 ---
+aws_region: us-west-1
+
 # username for ssh into remote VMs
 ssh_user: ubuntu
 # path used to store k8s binaries in management host
