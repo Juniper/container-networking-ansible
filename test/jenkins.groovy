@@ -29,13 +29,15 @@ test_noop = {
     //     def job = hudson.model.Hudson.instance.getItem('container-networking-ansible')
     //     println "{$id}"
     // }
-    echo 'NOOP'
+    node {
+        echo 'NOOP'
+    }
 }
 
 def getTestMatrix() {
     tests = [
         // test_ec2_k8s_basic,
-        test_noop
+        noop: test_noop,
     ]
     return tests
 }
