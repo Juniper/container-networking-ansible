@@ -25,15 +25,16 @@ test_ec2_k8s_basic = {
 }
 
 test_noop = {
-    node {
-        def job = hudson.model.Hudson.instance.getItem('container-networking-ansible')
-        println "{$id}"
-    }
+    // node {
+    //     def job = hudson.model.Hudson.instance.getItem('container-networking-ansible')
+    //     println "{$id}"
+    // }
+    echo 'NOOP'
 }
 
 def getTestMatrix() {
     def tests = [
-        test_ec2_k8s_basic,
+        // test_ec2_k8s_basic,
         test_noop
     ]
     return tests
