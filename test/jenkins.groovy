@@ -1,12 +1,3 @@
-def tests = [
-    test_ec2_k8s_basic,
-    test_noop
-]
-
-def getTextMatrix() {
-    return tests
-}
-
 def test_ec2_k8s_basic = {
     node {
         git url: 'https://github.com/Juniper/container-networking-ansible.git'
@@ -38,6 +29,15 @@ def test_noop = {
         def job = hudson.model.Hudson.instance.getItem('container-networking-ansible')
         println "{$id}"
     }
+}
+
+def tests = [
+    test_ec2_k8s_basic,
+    test_noop
+]
+
+def getTextMatrix() {
+    return tests
 }
 
 return this
