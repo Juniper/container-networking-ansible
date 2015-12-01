@@ -1,4 +1,4 @@
-def test_ec2_k8s_basic = {
+test_ec2_k8s_basic = {
     node {
         git url: 'https://github.com/Juniper/container-networking-ansible.git'
 
@@ -24,7 +24,7 @@ def test_ec2_k8s_basic = {
     }
 }
 
-def test_noop = {
+test_noop = {
     node {
         def job = hudson.model.Hudson.instance.getItem('container-networking-ansible')
         println "{$id}"
