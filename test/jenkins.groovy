@@ -25,12 +25,9 @@ test_ec2_k8s_basic = {
 }
 
 test_noop = {
-    // node {
-    //     def job = hudson.model.Hudson.instance.getItem('container-networking-ansible')
-    //     println "{$id}"
-    // }
     node {
-        echo 'NOOP'
+        // jenkins-<JOB_NAME>-<BUILD_NUMBER>
+        echo env.BUILD_TAG
     }
 }
 
