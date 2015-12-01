@@ -36,7 +36,7 @@ def tests = [
     test_noop
 ]
 
-def getTextMatrix() {
+def getTestMatrix() {
     return tests
 }
 
