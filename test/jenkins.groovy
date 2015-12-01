@@ -40,4 +40,4 @@ def getTextMatrix() {
     return tests
 }
 
-return this
+return this;
