@@ -1,6 +1,6 @@
 test_ec2_k8s_basic = {
     node {
-        git url: 'https://github.com/Juniper/container-networking-ansible.git'
+        // git url: 'https://github.com/Juniper/container-networking-ansible.git'
 
         withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'k8s-provisioner', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY']]) {
             // create cluster
@@ -33,7 +33,7 @@ test_noop = {
 
 def getTestMatrix() {
     tests = [
-        // test_ec2_k8s_basic,
+        ec2_k8s_basic: test_ec2_k8s_basic,
         noop: test_noop,
     ]
     return tests
