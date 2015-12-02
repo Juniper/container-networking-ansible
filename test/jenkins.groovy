@@ -1,3 +1,21 @@
+def ssh_options = '-o StrictHostKeyChecking=no -o ForwardAgent=yes'
+
+def deploy() {
+    playbooks = [
+        'resolution.yml',
+        'cluster.yml',
+        'validate.yml',
+        'examples.yml'
+    ]
+    for (String playbook : playbooks) {
+        sh 'ssh ${ssh_options} ansible-playbook -i src/contrib/ansible/inventory ${playbook}'
+    }
+}
+
+def guestbook_status() {
+    sh 'ssh %{ssh_options} curl http://172.16.0.252:3000/info > guestbook.status'
+}
+
 test_ec2_k8s_basic = {
     node {
         // git url: 'https://github.com/Juniper/container-networking-ansible.git'
@@ -7,19 +25,21 @@ test_ec2_k8s_basic = {
                 sh "ansible-playbook -i localhost playbook.yml --tags=create -e job_id=${env.BUILD_NUMBER}"
             }
 
-            withCredentials([[$class: 'FileBinding', credentialsId: 'k8s.key', variable: 'SSH_PRIVATE_KEY']]) {
-                sh("ansible-playbook -i localhost playbook.yml --private-key=$SSH_PRIVATE_KEY --tags=deployer-install")
-                sh("ansible-playbook -i localhost playbook.yml --private-key=$SSH_PRIVATE_KEY --tags=workspace")
-            }
+            try() {
+                sshagent(credentials: ["k8s"]) {
+                    sh 'ansible-playbook -i localhost playbook.yml --tags=deployer-install'
+                    sh 'ansible-playbook -i localhost playbook.yml --tags=workspace')
+                    // ssh client steps
+                    deploy()
 
-            // ssh client steps:
-            // provision cluster
-            // validate
-            // example application
-            // verify
-
-            withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'k8s-provisioner', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-                // delete cluster
+                    // verify
+                    guestbook_status()
+                }
+            } finally() {
+                withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'k8s-provisioner', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+                    // delete cluster
+                    sh 'ansible-playbook -i cluster.status clean.yml'
+                }
             }
         }
     }
