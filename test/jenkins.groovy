@@ -1,13 +1,12 @@
 test_ec2_k8s_basic = {
     node {
         // git url: 'https://github.com/Juniper/container-networking-ansible.git'
-
         withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'k8s-provisioner', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY']]) {
             // create cluster
-            sh("ansible-playbook -i localhost playbook.yml --tags=create -e job_id=$BUILD_TAG")
+            sh "ansible-playbook -i localhost playbook.yml --tags=create -e job_id=${env.BUILD_NUMBER}"
         }
 
-        withCredentials([[$class: 'FileBinding', credentialsId: 'k8s-ssh-key', variable: 'SSH_PRIVATE_KEY']]) {
+        withCredentials([[$class: 'FileBinding', credentialsId: 'k8s.key', variable: 'SSH_PRIVATE_KEY']]) {
             sh("ansible-playbook -i localhost playbook.yml --private-key=$SSH_PRIVATE_KEY --tags=deployer-install")
             sh("ansible-playbook -i localhost playbook.yml --private-key=$SSH_PRIVATE_KEY --tags=workspace")
         }
