@@ -35,12 +35,11 @@ def deploy(deployer) {
 
     echo "Start deploy stage on ${deployer}"
 
-    for (playbook in playbooks) {
+    // Use an integer as iterator so that it is serializable.
+    // The "sh" step requires local variables to serialize.
+    for (int i = 0; i < playbooks.size(); i++) {
+        def playbook = playbooks[i]
     	echo "playbook ${playbook}"
-        echo "ssh ${ssh_options} ${deployer} ansible-playbook -i src/contrib/ansible/inventory src/contrib/ansible/${playbook}"
-	sh "ssh ${deployer} pwd"
-	sh "ssh ${deployer} ls src/contrib/ansible"
-	sh "ssh ${ssh_options} ${deployer} ls src/contrib/ansible"
         sh "ssh ${ssh_options} ${deployer} ansible-playbook -i src/contrib/ansible/inventory src/contrib/ansible/${playbook}"
     }
 }
