@@ -1,6 +1,8 @@
 ssh_options = '-o StrictHostKeyChecking=no -o ForwardAgent=yes'
 
-def getHostname(String inventory) {
+def getDeployerHostname() {
+    def inventory = new File('cluster.status').text
+
     bool section = false
     String hostname
 
@@ -18,7 +20,7 @@ def getHostname(String inventory) {
     return hostname
 }
 
-def deploy() {
+def deploy(deployer) {
     playbooks = [
         'resolution.yml',
         'cluster.yml',
@@ -26,18 +28,16 @@ def deploy() {
         'examples.yml'
     ]
 
-    def inventory = new File('cluster.status').text
-    def hostname = getHostname(inventory)
-    echo "Start deploy stage on ${hostname}"
+    echo "Start deploy stage on ${deployer}"
 
-    for (String playbook : playbooks) {
+    for (playbook in playbooks) {
     	echo "playbook ${playbook}"
-        sh "ssh ${ssh_options} ${hostname} ansible-playbook -i src/contrib/ansible/inventory ${playbook}"
+        sh "ssh ${ssh_options} ${deployer} ansible-playbook -i src/contrib/ansible/inventory ${playbook}"
     }
 }
 
-def guestbook_status() {
-    sh "ssh %{ssh_options} curl http://172.16.0.252:3000/info > guestbook.status"
+def guestbook_status(deployer) {
+    sh "ssh ${ssh_options} ${deployer} curl http://172.16.0.252:3000/info > guestbook.status"
 }
 
 test_ec2_k8s_basic = {
@@ -49,15 +49,17 @@ test_ec2_k8s_basic = {
                 sh "ansible-playbook -i localhost playbook.yml --tags=create -e job_id=${env.BUILD_NUMBER}"
             }
 
+	    def deployer = getDeployerHostname()
+
             try {
                 sshagent(credentials: ["k8s"]) {
                     sh 'ansible-playbook -i cluster.status playbook.yml --tags=deployer-install'
                     sh 'ansible-playbook -i cluster.status playbook.yml --tags=workspace'
                     // ssh client steps
-                    deploy()
+                    deploy(deployer)
 
                     // verify
-                    guestbook_status()
+                    guestbook_status(deployer)
                 }
             } finally {
                 withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'k8s-provisioner', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY']]) {
