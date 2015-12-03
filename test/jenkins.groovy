@@ -40,6 +40,7 @@ def deploy(deployer) {
     for (int i = 0; i < playbooks.size(); i++) {
         def playbook = playbooks[i]
     	echo "playbook ${playbook}"
+        sh "ssh-add -l"
         sh "ssh ${ssh_options} ${deployer} ansible-playbook -i src/contrib/ansible/inventory src/contrib/ansible/${playbook}"
     }
 }
@@ -63,6 +64,7 @@ test_ec2_k8s_basic = {
                 sshagent(credentials: ["k8s"]) {
                     sh 'ansible-playbook -i cluster.status playbook.yml --tags=deployer-install'
                     sh 'ansible-playbook -i cluster.status playbook.yml --tags=workspace'
+                    sh 'ssh-add -l'
                     // ssh client steps
                     deploy(deployer)
 
@@ -70,10 +72,10 @@ test_ec2_k8s_basic = {
                     guestbook_status(deployer)
                 }
             } finally {
-                withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'k8s-provisioner', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-                    // delete cluster
-                    sh 'ansible-playbook -i cluster.status clean.yml'
-                }
+                // withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'k8s-provisioner', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+                //     // delete cluster
+                //     sh 'ansible-playbook -i cluster.status clean.yml'
+                // }
             }
         }
     }
