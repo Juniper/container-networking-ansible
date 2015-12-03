@@ -1,3 +1,5 @@
+import hudson.AbortException
+
 ssh_options = '-o StrictHostKeyChecking=no -o ForwardAgent=yes'
 
 def getDeployerHostname() {
@@ -43,8 +45,13 @@ def deploy(deployer) {
 }
 
 def validate(deployer) {
-    waitUntil {
-        sh "ssh ${ssh_options} ubuntu@${deployer} ansible-playbook -i src/contrib/ansible/inventory src/contrib/ansible/validate.yml"
+    retry(15) {
+        try {
+            sh "ssh ${ssh_options} ubuntu@${deployer} ansible-playbook -i src/contrib/ansible/inventory src/contrib/ansible/validate.yml"
+        } catch (AbortException e) {
+            Thread.sleep(60 * 1000)
+            error('Cluster not ready')
+        }
     }
 }
 
@@ -53,11 +60,19 @@ def run_examples(deployer) {
 }
 
 def guestbook_status(deployer) {
-    waitUntil {
-        sh "ssh ${ssh_options} ubuntu@${deployer} curl http://172.16.0.252:3000/info > guestbook.status"
-        def status = readFile('guestbook.status')
-        def slaves = match_connected_slaves(status)
-        slaves == '2'
+    retry(15) {
+        try {
+            sh "ssh ${ssh_options} ubuntu@${deployer} curl http://172.16.0.252:3000/info > guestbook.status"
+            def status = readFile('guestbook.status')
+            def slaves = match_connected_slaves(status)
+            if (slaves != '2') {
+                Thread.sleep(60 * 1000)
+                error("redis slaves: ${slaves}")
+            }
+        } catch (AbortException e) {
+            Thread.sleep(60 * 1000)
+            error('Service not responding')
+        }
     }
 }
 
