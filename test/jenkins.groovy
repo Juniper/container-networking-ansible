@@ -1,4 +1,4 @@
-def ssh_options = '-o StrictHostKeyChecking=no -o ForwardAgent=yes'
+ssh_options = '-o StrictHostKeyChecking=no -o ForwardAgent=yes'
 
 def deploy() {
     playbooks = [
