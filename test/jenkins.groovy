@@ -1,12 +1,12 @@
 ssh_options = '-o StrictHostKeyChecking=no -o ForwardAgent=yes'
 
-def getDeployerHostname(path) {
-    def inventory = new File(env.WORKSPACE + '/' + path, 'cluster.status')
+def getDeployerHostname() {
+    def inventory = readFile('cluster.status')
 
     def section = false
     def hostname
 
-    for (line in inventory.readLines()) {
+    for (line in inventory.split('\n')) {
         if (line == '[management]') {
            section = true
            continue
@@ -49,7 +49,7 @@ test_ec2_k8s_basic = {
                 sh "ansible-playbook -i localhost playbook.yml --tags=create -e job_id=${env.BUILD_NUMBER}"
             }
 
-	    def deployer = getDeployerHostname('test/ec2-k8s')
+	    def deployer = getDeployerHostname()
 
             try {
                 sshagent(credentials: ["k8s"]) {
