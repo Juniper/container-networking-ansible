@@ -1,28 +1,18 @@
 ---
-- name: Create a VPC
-  ec2_vpc:
-    state: present
+- name: Locate the VPC
+  ec2_vpc_facts:
     region: "{{ aws_region }}"
-    cidr_block: 192.168.0.0/16
     resource_tags:
-      "Name": "k8s-vpc-{{ job_id }}"
-      "Cluster": "k8s-ansible-{{ job_id }}"
-    subnets:
-      - cidr: 192.168.0.0/24
-        resource_tags: {"Name": "k8s-{{ job_id }}-public"}
-    internet_gateway: True
-    route_tables:
-      - subnets:
-          - 192.168.0.0/24
-        routes:
-          - dest: 0.0.0.0/0
-            gw: igw
+      "Name": opencontrail-ci-vpc
   register: vpc
 
-- name: Jump host security group
+- set_fact:
+   public_subnet: "{{ vpc.subnets | selectattr('tags', 'equalto', dict(Name='opencontrail-ci-public')) | first}}"
+
+- name: Deployer security-group
   ec2_group:
-    name: management
-    description: "Management end-point SG {{ job_id }}"
+    name: k8s-basic-deployer
+    description: "k8s deplopyer security-group"
     region: "{{ aws_region }}"
     vpc_id: "{{ vpc.vpc_id }}"
     rules:
@@ -35,39 +25,32 @@
         cidr_ip: 0.0.0.0/0
   register: sg_management
 
-- name: Read default security group
+- name: Cluster security-group
   ec2_group:
-    name: default
-    description: "Default SG k8s-vpc-{{ job_id }}"
-    state: present
-    vpc_id: "{{ vpc.vpc_id }}"
-    region: "{{ aws_region }}"
-  register: sg_default
-
-- name: Default security group
-  ec2_group:
-    name: default
-    description: "Default SG k8s-vpc-{{ job_id }}"
+    name: k8s-basic-sg
+    description: "k8s cluster security-group"
     vpc_id: "{{ vpc.vpc_id }}"
     region: "{{ aws_region }}"
     rules:
       - proto: all
-        group_id: "{{ sg_default.group_id }}"
+        group_name: k8s-basic-sg
       - proto: all
         group_id: "{{ sg_management.group_id }}"
     rules_egress:
       - proto: all
         cidr_ip: 0.0.0.0/0
-  register: sg_default
+  register: sg_cluster
 
 - name: Management host
   ec2:
     image: "{{ ec2_image }}"
     key_name: k8s
-    instance_tags: {"Name": "k8s-mgmt-{{ job_id }}", "Cluster": "k8s-ansible-{{ job_id }}"}
+    instance_tags:
+      "Name": "k8s-mgmt-{{ job_id }}"
+      "Cluster": "k8s-ansible-{{ job_id }}"
     instance_type: m3.medium
     region: "{{ aws_region }}"
-    vpc_subnet_id: "{{ vpc.subnets[0].id }}"
+    vpc_subnet_id: "{{ public_subnet.id }}"
     group_id: "{{ sg_management.group_id }}"
     assign_public_ip: yes
     count_tag:
@@ -82,10 +65,13 @@
   ec2:
     image: "{{ ec2_image }}"
     key_name: k8s
-    instance_tags: {"Name": "k8s-gateway-{{ job_id }}", "Cluster": "k8s-ansible-{{ job_id }}"}
+    instance_tags:
+      "Name": "k8s-gateway-{{ job_id }}"
+      "Cluster": "k8s-ansible-{{ job_id }}"
     instance_type: m3.medium
     region: "{{ aws_region }}"
-    vpc_subnet_id: "{{ vpc.subnets[0].id }}"
+    vpc_subnet_id: "{{ public_subnet.id }}"
+    group_id: "{{ sg_cluster.group_id }}"
     assign_public_ip: yes
     source_dest_check: no
     wait: yes
@@ -98,10 +84,13 @@
   ec2:
     image: "{{ ec2_image }}"
     key_name: k8s
-    instance_tags: {"Name": "k8s-master-{{ job_id }}", "Cluster": "k8s-ansible-{{ job_id }}"}
+    instance_tags:
+      "Name": "k8s-master-{{ job_id }}"
+      "Cluster": "k8s-ansible-{{ job_id }}"
     instance_type: m3.large
     region: "{{ aws_region }}"
-    vpc_subnet_id: "{{ vpc.subnets[0].id }}"
+    vpc_subnet_id: "{{ public_subnet.id }}"
+    group_id: "{{ sg_cluster.group_id }}"
     assign_public_ip: yes        
     count_tag:
       Name: "k8s-master-{{ job_id }}"
@@ -117,32 +106,25 @@
       Cluster: "k8s-ansible-{{ job_id }}"
     instance_type: m3.medium
     region: "{{ aws_region }}"
-    vpc_subnet_id: "{{ vpc.subnets[0].id }}"
+    vpc_subnet_id: "{{ public_subnet.id }}"
+    group_id: "{{ sg_cluster.group_id }}"
     assign_public_ip: yes
     count_tag:
       Name: "k8s-node-{{ job_id }}"
     exact_count: 2
   register: k8s_nodes
 
-- name: Update the vpc
-  ec2_vpc:
-    state: present
+- name: Update the vpc routing table
+  ec2_vpc_rtb_update:
     region: "{{ aws_region }}"
-    cidr_block: 192.168.0.0/16
-    resource_tags: {"Name": "k8s-vpc-{{ job_id }}", "Cluster": "k8s-ansible-{{ job_id }}"}
     vpc_id: "{{ vpc.vpc_id }}"
     subnets:
-      - cidr: 192.168.0.0/24
-        resource_tags: {"Name": "k8s-{{ job_id }}-public"}
-    internet_gateway: True
-    route_tables:
-      - subnets:
-        - 192.168.0.0/24
-        routes:
-          - dest: 0.0.0.0/0
-            gw: igw
-          - dest: "{{ k8s_public_subnet }}"
-            gw: "{{ k8s_gateway.tagged_instances[0].id }}"
+      - "{{ public_subnet.id }}"
+    routes:
+      - dest: 0.0.0.0/0
+        gw: igw
+      - dest: "{{ k8s_public_subnet }}"
+        gw: "{{ k8s_gateway.tagged_instances[0].id }}"
 
 - name: Store the status of the cluster
   template: src=status.j2 dest="{{ inventory_dir }}/cluster.status"
