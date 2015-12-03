@@ -21,7 +21,7 @@ def getDeployerHostname() {
 
 @NonCPS
 def inventory_match_item(text) {
-    def matcher = (text =~ /^\w+/)
+    def matcher = (text =~ /^[\w-_\.]+/)
     matcher ? matcher[0] : null
 }
 
