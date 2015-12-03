@@ -1,8 +1,7 @@
 ssh_options = '-o StrictHostKeyChecking=no -o ForwardAgent=yes'
 
 def getDeployerHostname(path) {
-    def dir = new File(env.WORKSPACE, path)
-    def inventory = new File(dir, 'cluster.status')
+    def inventory = new File(env.WORKSPACE + '/' + path, 'cluster.status')
 
     def section = false
     def hostname
