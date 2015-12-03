@@ -28,9 +28,7 @@ def inventory_match_item(text) {
 def deploy(deployer) {
     playbooks = [
         'resolution.yml',
-        'cluster.yml',
-        'validate.yml',
-        'examples.yml'
+        'cluster.yml'
     ]
 
     echo "Start deploy stage on ${deployer}"
@@ -40,13 +38,33 @@ def deploy(deployer) {
     for (int i = 0; i < playbooks.size(); i++) {
         def playbook = playbooks[i]
     	echo "playbook ${playbook}"
-        sh "ssh-add -l"
-        sh "ssh ${ssh_options} ${deployer} ansible-playbook -i src/contrib/ansible/inventory src/contrib/ansible/${playbook}"
+        sh "ssh ${ssh_options} ubuntu@${deployer} ansible-playbook -i src/contrib/ansible/inventory src/contrib/ansible/${playbook}"
     }
 }
 
+def validate(deployer) {
+    waitUntil {
+        sh "ssh ${ssh_options} ubuntu@${deployer} ansible-playbook -i src/contrib/ansible/inventory src/contrib/ansible/validate.yml"
+    }
+}
+
+def run_examples(deployer) {
+    sh "ssh ${ssh_options} ubuntu@${deployer} ansible-playbook -i src/contrib/ansible/inventory src/contrib/ansible/examples.yml"
+}
+
 def guestbook_status(deployer) {
-    sh "ssh ${ssh_options} ${deployer} curl http://172.16.0.252:3000/info > guestbook.status"
+    waitUntil {
+        sh "ssh ${ssh_options} ubuntu@${deployer} curl http://172.16.0.252:3000/info > guestbook.status"
+        def status = readFile('guestbook.status')
+        def slaves = match_connected_slaves(status)
+        slaves == '2'
+    }
+}
+
+@NonCPS
+def match_connected_slaves(status) {
+    def matcher = (status =~ /^connected_slaves: (\d+)/)
+    matcher ? matcher[0][1] : null
 }
 
 test_ec2_k8s_basic = {
@@ -64,18 +82,21 @@ test_ec2_k8s_basic = {
                 sshagent(credentials: ["k8s"]) {
                     sh 'ansible-playbook -i cluster.status playbook.yml --tags=deployer-install'
                     sh 'ansible-playbook -i cluster.status playbook.yml --tags=workspace'
-                    sh 'ssh-add -l'
                     // ssh client steps
                     deploy(deployer)
+
+                    validate(deployer)
+
+                    run_examples(deployer)
 
                     // verify
                     guestbook_status(deployer)
                 }
             } finally {
-                // withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'k8s-provisioner', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-                //     // delete cluster
-                //     sh 'ansible-playbook -i cluster.status clean.yml'
-                // }
+                withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'k8s-provisioner', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+                    // delete cluster
+                    sh 'ansible-playbook -i cluster.status clean.yml'
+                }
             }
         }
     }
