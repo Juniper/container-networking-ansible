@@ -36,5 +36,5 @@
 - name: First Master ipaddr default
   set_fact:
     opencontrail_master_host_address: "{{ hostvars[groups['masters'][0]]['opencontrail_host_address'] }}"
-  when: opencontrail_master_host_addresses is not defined
+  when: opencontrail_master_host_address is not defined
 
