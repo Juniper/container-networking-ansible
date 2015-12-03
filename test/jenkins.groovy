@@ -25,7 +25,7 @@ test_ec2_k8s_basic = {
                 sh "ansible-playbook -i localhost playbook.yml --tags=create -e job_id=${env.BUILD_NUMBER}"
             }
 
-            try() {
+            try {
                 sshagent(credentials: ["k8s"]) {
                     sh 'ansible-playbook -i localhost playbook.yml --tags=deployer-install'
                     sh 'ansible-playbook -i localhost playbook.yml --tags=workspace')
@@ -35,7 +35,7 @@ test_ec2_k8s_basic = {
                     // verify
                     guestbook_status()
                 }
-            } finally() {
+            } finally {
                 withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'k8s-provisioner', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY']]) {
                     // delete cluster
                     sh 'ansible-playbook -i cluster.status clean.yml'
