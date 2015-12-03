@@ -46,8 +46,8 @@
     image: "{{ ec2_image }}"
     key_name: k8s
     instance_tags:
-      "Name": "k8s-mgmt-{{ job_id }}"
-      "Cluster": "k8s-ansible-{{ job_id }}"
+      Name: "k8s-mgmt-{{ job_id }}"
+      Cluster: "k8s-ansible-{{ job_id }}"
     instance_type: m3.medium
     region: "{{ aws_region }}"
     vpc_subnet_id: "{{ public_subnet.id }}"
@@ -66,8 +66,8 @@
     image: "{{ ec2_image }}"
     key_name: k8s
     instance_tags:
-      "Name": "k8s-gateway-{{ job_id }}"
-      "Cluster": "k8s-ansible-{{ job_id }}"
+      Name: "k8s-gateway-{{ job_id }}"
+      Cluster: "k8s-ansible-{{ job_id }}"
     instance_type: m3.medium
     region: "{{ aws_region }}"
     vpc_subnet_id: "{{ public_subnet.id }}"
@@ -85,8 +85,8 @@
     image: "{{ ec2_image }}"
     key_name: k8s
     instance_tags:
-      "Name": "k8s-master-{{ job_id }}"
-      "Cluster": "k8s-ansible-{{ job_id }}"
+      Name: "k8s-master-{{ job_id }}"
+      Cluster: "k8s-ansible-{{ job_id }}"
     instance_type: m3.large
     region: "{{ aws_region }}"
     vpc_subnet_id: "{{ public_subnet.id }}"
