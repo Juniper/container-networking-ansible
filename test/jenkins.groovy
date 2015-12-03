@@ -28,7 +28,7 @@ test_ec2_k8s_basic = {
             try {
                 sshagent(credentials: ["k8s"]) {
                     sh 'ansible-playbook -i localhost playbook.yml --tags=deployer-install'
-                    sh 'ansible-playbook -i localhost playbook.yml --tags=workspace')
+                    sh 'ansible-playbook -i localhost playbook.yml --tags=workspace'
                     // ssh client steps
                     deploy()
 
