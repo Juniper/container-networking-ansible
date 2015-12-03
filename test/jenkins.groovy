@@ -1,12 +1,10 @@
 ssh_options = '-o StrictHostKeyChecking=no -o ForwardAgent=yes'
 
 def getDeployerHostname(path) {
-    def cwd = System.getProperty("user.dir")
-    echo "cwd: ${cwd}"
     def inventory = new File(path, 'cluster.status')
 
-    bool section = false
-    String hostname
+    def section = false
+    def hostname
 
     for (line in inventory.readLines()) {
         if (line == '[management]') {
