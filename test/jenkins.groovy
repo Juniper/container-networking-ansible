@@ -70,6 +70,7 @@ def guestbook_status(deployer) {
                 error("redis slaves: ${slaves}")
             }
         } catch (AbortException e) {
+            echo e.getMessage()
             Thread.sleep(60 * 1000)
             error('Service not responding')
         }

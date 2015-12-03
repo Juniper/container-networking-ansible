@@ -2,6 +2,10 @@
 #
 # Module that updates the routing table of a VPC.
 #
+# It updates (create or replace routes pointing to instance).
+# It ignores gateway routes and doesn't flush instance routes that are no
+# longer specified.
+#
 
 # import module snippets
 from ansible.module_utils.basic import *
@@ -53,12 +57,20 @@ def main():
 
     changed = False
     for route in module.params.get('routes'):
+        if route.get('gw') == 'igw':
+            continue
+
         existing_rt = filter(
             lambda x: x.destination_cidr_block == route['dest'], rtb.routes)
+
         if len(existing_rt) > 0:
-            continue
-        success = connection.create_route(
-            rtb.id, route['dest'], instance_id=route.get('gw'))
+            if existing_rt[0].instance_id == route.get('gw'):
+                continue
+            success = connection.replace_route(
+                rtb.id, route['dest'], instance_id=route.get('gw'))
+        else:
+            success = connection.create_route(
+                rtb.id, route['dest'], instance_id=route.get('gw'))
         if success:
             changed = True
 
