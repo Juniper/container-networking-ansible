@@ -1,5 +1,23 @@
 ssh_options = '-o StrictHostKeyChecking=no -o ForwardAgent=yes'
 
+def getHostname(String inventory) {
+    bool section = false
+    String hostname
+
+    for (line in inventory.readLines()) {
+        if (line == '[management]') {
+           section = true
+           continue
+        }
+        if (section) {
+           matcher = (line =~ /^\w+/)
+           hostname = matcher[0]
+           break
+        }
+    }
+    return hostname
+}
+
 def deploy() {
     playbooks = [
         'resolution.yml',
@@ -7,10 +25,14 @@ def deploy() {
         'validate.yml',
         'examples.yml'
     ]
-    echo 'Start deploy stage'
+
+    def inventory = new File('cluster.status').text
+    def hostname = getHostname(inventory)
+    echo "Start deploy stage on ${hostname}"
+
     for (String playbook : playbooks) {
     	echo "playbook ${playbook}"
-        sh "ssh ${ssh_options} ansible-playbook -i src/contrib/ansible/inventory ${playbook}"
+        sh "ssh ${ssh_options} ${hostname} ansible-playbook -i src/contrib/ansible/inventory ${playbook}"
     }
 }
 
