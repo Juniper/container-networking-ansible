@@ -29,7 +29,7 @@ test_ec2_k8s_basic = {
 
             try {
                 sshagent(credentials: ["k8s"]) {
-                    sh 'ansible-playbook -i cluster.status playbook.yml --tags=deployer-install'
+                    sh 'ansible-playbook -vvvv -i cluster.status playbook.yml --tags=deployer-install'
                     sh 'ansible-playbook -i cluster.status playbook.yml --tags=workspace'
                     // ssh client steps
                     deploy()
