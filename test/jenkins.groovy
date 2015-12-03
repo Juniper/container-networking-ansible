@@ -7,7 +7,9 @@ def deploy() {
         'validate.yml',
         'examples.yml'
     ]
+    echo 'Start deploy stage'
     for (String playbook : playbooks) {
+    	echo "playbook ${playbook}"
         sh "ssh ${ssh_options} ansible-playbook -i src/contrib/ansible/inventory ${playbook}"
     }
 }
@@ -27,8 +29,8 @@ test_ec2_k8s_basic = {
 
             try {
                 sshagent(credentials: ["k8s"]) {
-                    sh 'ansible-playbook -i inventory.cluster playbook.yml --tags=deployer-install'
-                    sh 'ansible-playbook -i inventory.cluster playbook.yml --tags=workspace'
+                    sh 'ansible-playbook -i cluster.status playbook.yml --tags=deployer-install'
+                    sh 'ansible-playbook -i cluster.status playbook.yml --tags=workspace'
                     // ssh client steps
                     deploy()
 
