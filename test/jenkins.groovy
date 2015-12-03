@@ -1,7 +1,9 @@
 ssh_options = '-o StrictHostKeyChecking=no -o ForwardAgent=yes'
 
-def getDeployerHostname() {
-    def inventory = new File(System.getProperty("user.dir"), 'cluster.status')
+def getDeployerHostname(path) {
+    def cwd = System.getProperty("user.dir")
+    echo "cwd: ${cwd}"
+    def inventory = new File(path, 'cluster.status')
 
     bool section = false
     String hostname
@@ -49,7 +51,7 @@ test_ec2_k8s_basic = {
                 sh "ansible-playbook -i localhost playbook.yml --tags=create -e job_id=${env.BUILD_NUMBER}"
             }
 
-	    def deployer = getDeployerHostname()
+	    def deployer = getDeployerHostname('test/ec2-k8s')
 
             try {
                 sshagent(credentials: ["k8s"]) {
