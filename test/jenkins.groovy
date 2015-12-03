@@ -12,12 +12,17 @@ def getDeployerHostname() {
            continue
         }
         if (section) {
-           matcher = (line =~ /^\w+/)
-           hostname = matcher[0]
+	   hostname = inventory_match_item(line)
            break
         }
     }
     return hostname
+}
+
+@NonCPS
+def inventory_match_item(text) {
+    def matcher = (text =~ /^\w+/)
+    matcher ? matcher[0] : null
 }
 
 def deploy(deployer) {
