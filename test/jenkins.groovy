@@ -1,7 +1,7 @@
 ssh_options = '-o StrictHostKeyChecking=no -o ForwardAgent=yes'
 
 def getDeployerHostname() {
-    def inventory = new File('cluster.status').text
+    def inventory = new File(System.getProperty("user.dir"), 'cluster.status')
 
     bool section = false
     String hostname
