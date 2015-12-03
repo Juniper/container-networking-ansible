@@ -8,12 +8,12 @@ def deploy() {
         'examples.yml'
     ]
     for (String playbook : playbooks) {
-        sh 'ssh ${ssh_options} ansible-playbook -i src/contrib/ansible/inventory ${playbook}'
+        sh "ssh ${ssh_options} ansible-playbook -i src/contrib/ansible/inventory ${playbook}"
     }
 }
 
 def guestbook_status() {
-    sh 'ssh %{ssh_options} curl http://172.16.0.252:3000/info > guestbook.status'
+    sh "ssh %{ssh_options} curl http://172.16.0.252:3000/info > guestbook.status"
 }
 
 test_ec2_k8s_basic = {
@@ -27,8 +27,8 @@ test_ec2_k8s_basic = {
 
             try {
                 sshagent(credentials: ["k8s"]) {
-                    sh 'ansible-playbook -i localhost playbook.yml --tags=deployer-install'
-                    sh 'ansible-playbook -i localhost playbook.yml --tags=workspace'
+                    sh 'ansible-playbook -i inventory.cluster playbook.yml --tags=deployer-install'
+                    sh 'ansible-playbook -i inventory.cluster playbook.yml --tags=workspace'
                     // ssh client steps
                     deploy()
 
