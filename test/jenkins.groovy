@@ -37,7 +37,7 @@ def deploy(deployer) {
 
     for (playbook in playbooks) {
     	echo "playbook ${playbook}"
-        sh "ssh ${ssh_options} ${deployer} ansible-playbook -i src/contrib/ansible/inventory ${playbook}"
+        sh "ssh ${ssh_options} ${deployer} ansible-playbook -i src/contrib/ansible/inventory src/contrib/ansible/${playbook}"
     }
 }
 
