@@ -61,18 +61,19 @@ def run_examples(deployer) {
 
 def guestbook_status(deployer) {
     retry(15) {
+        def status
         try {
             sh "ssh ${ssh_options} ubuntu@${deployer} curl http://172.16.0.252:3000/info > guestbook.status"
-            def status = readFile('guestbook.status')
-            def slaves = match_connected_slaves(status)
-            if (slaves != '2') {
-                Thread.sleep(60 * 1000)
-                error("redis slaves: ${slaves}")
-            }
+            status = readFile('guestbook.status')
         } catch (AbortException e) {
             echo e.getMessage()
             Thread.sleep(60 * 1000)
             error('Service not responding')
+        }
+        def slaves = match_connected_slaves(status)
+        if (slaves != '2') {
+            Thread.sleep(60 * 1000)
+            error("redis slaves: ${slaves}")
         }
     }
 }
