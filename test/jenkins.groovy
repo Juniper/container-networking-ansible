@@ -79,7 +79,7 @@ def guestbook_status(deployer) {
 
 @NonCPS
 def match_connected_slaves(status) {
-    def matcher = (status =~ /^connected_slaves: (\d+)/)
+    def matcher = (status =~ /(?m)^connected_slaves: (\d+)/)
     matcher ? matcher[0][1] : null
 }
 
