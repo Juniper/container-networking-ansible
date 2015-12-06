@@ -76,6 +76,7 @@ def guestbook_status(deployer) {
             error("redis slaves: ${slaves}")
         }
     }
+    input 'debug status'
 }
 
 @NonCPS
