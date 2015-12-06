@@ -76,12 +76,11 @@ def guestbook_status(deployer) {
             error("redis slaves: ${slaves}")
         }
     }
-    input 'debug status'
 }
 
 @NonCPS
 def match_connected_slaves(status) {
-    def matcher = (status =~ /(?m)^connected_slaves: (\d+)/)
+    def matcher = (status =~ /(?m)^connected_slaves:(\d+)/)
     matcher ? matcher[0][1] : null
 }
 
