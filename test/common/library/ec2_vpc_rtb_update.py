@@ -48,12 +48,14 @@ def main():
     selected_tables = filter(match_by_subnets, tables)
 
     if len(selected_tables) != 1:
-        if len(selected_tables) == 0:
-            module.fail_json(msg="No route table found")
-        else:
+        if len(selected_tables) > 1:
             module.fail_json(msg="Multiple route tables selected")
 
-    rtb = selected_tables[0]
+        rtb = connection.create_route_table(module.params.get('vpc_id'))
+        for subnet_id in module.params.get('subnets'):
+            connection.associate_route_table(rtb.id, subnet_id)
+    else:
+        rtb = selected_tables[0]
 
     changed = False
     for route in module.params.get('routes'):

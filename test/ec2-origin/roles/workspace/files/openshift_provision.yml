@@ -1,0 +1,48 @@
+- hosts:
+    - masters
+  sudo: yes
+  tasks:
+    - name: Deploy OpenShift Registry
+      command: >-
+        oadm registry
+        --create --service-account=registry
+        --credentials={{ openshift_master_config_dir }}/openshift-registry.kubeconfig
+      register: _oreg_results
+      changed_when: "'service exists' not in _oreg_results.stdout"
+
+    - name: Deploy OpenShift Router
+      command: >-
+        oadm router
+        --create --service-account=router --host-network=false
+        --credentials={{ openshift_master_config_dir }}/openshift-router.kubeconfig
+      register: _ortr_results
+      changed_when: "'service exists' not in _ortr_results.stdout"
+
+    - name: Create test user
+      command: htpasswd -b /etc/openshift/htpasswd test c0ntrail123
+  vars:
+    openshift_master_config_dir: /etc/origin/master
+
+# The STI builder creates an image in the node docker image repository; it then pushes the
+# image to the docker-registry. We want the node to talk to the registry without going through
+# the http-proxy.
+- hosts:
+    - nodes
+  sudo: yes
+  tasks:
+    - name: Get docker repository address
+      set_fact:
+        svc_docker_registry: "{{ lookup('dig', 'docker-registry.default.svc.cluster.local', '@localhost') }}"
+
+    - name: Add docker-registry address to nodes docker config
+      lineinfile:
+        dest: /etc/sysconfig/docker
+        regexp: '^no_proxy=(.*?)(,([0-9\.])+)?$'
+        line: 'no_proxy=\1,{{ svc_docker_registry }}'
+        backrefs: yes
+      notify:
+        - restart docker
+
+  handlers:
+    - name: restart docker
+      service: name=docker state=restarted

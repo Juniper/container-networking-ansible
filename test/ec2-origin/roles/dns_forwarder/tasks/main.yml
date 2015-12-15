@@ -1,0 +1,18 @@
+---
+- name: Install unbound package
+  yum: name=unbound state=present
+
+- name: read nameserver configuration
+  command: awk '/nameserver/ { print $2; }' /etc/resolv.conf
+  register: _resolv_ns
+
+- set_fact:
+    aws_dns_resolver: "{{ _resolv_ns.stdout }}"
+
+- name: unbound configuration file
+  template: src=unbound.conf.j2 dest=/etc/unbound/unbound.conf
+  notify:
+    - restart unbound
+
+- name: start unbound
+  service: name=unbound state=started

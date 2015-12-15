@@ -1,0 +1,45 @@
+---
+# playbook use to configure the cluster with settings such as web-proxy
+# and address resolution. It is executed by the deployer against the
+# cluster inventory.
+
+- name: System configuration
+  hosts: all
+  sudo: yes
+  tasks:
+    - name: yum proxy configuration
+      lineinfile:
+        dest: /etc/yum.conf
+        regexp: "^proxy="
+        line: "proxy={{ web_proxy }}"
+
+    - name: environment (http)
+      lineinfile:
+        dest: /etc/environment
+        regexp: "^http_proxy="
+        line: "http_proxy={{ web_proxy }}"
+
+    - name: environment (https)
+      lineinfile:
+        dest: /etc/environment
+        regexp: "^https_proxy="
+        line: "https_proxy={{ web_proxy }}"
+
+    - name: environment (no-proxy)
+      lineinfile:
+        dest: /etc/environment
+        regexp: "^no_proxy="
+        line: "no_proxy=localhost,127.0.0.1,{{ ansible_default_ipv4['address'] }},169.254.169.254,.dev.opencontrail.org,.svc.cluster.local,.compute.internal,::1"
+
+    - name: Set hostname
+      hostname: name="{{ inventory_hostname }}"
+
+    - name: Add entries to /etc/hosts
+      lineinfile:
+        dest=/etc/hosts
+        regexp="^{{ hostvars[item].ansible_ssh_host }}"
+        line="{{ hostvars[item].ansible_ssh_host }} {{ item }}"
+      with_items: groups['all']
+
+  vars:
+    - web_proxy: "http://web-proxy.VAR_AWS_REGION.dev.opencontrail.org:3128"

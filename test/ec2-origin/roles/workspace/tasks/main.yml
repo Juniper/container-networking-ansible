@@ -1,0 +1,39 @@
+---
+- name: Create container-networking-ansible tar
+  local_action: command tar zcvf container-networking-ansible.tgz -C "{{ inventory_dir }}/../.." --exclude test --exclude playbooks --exclude .git .
+
+- name: workspace directory
+  file: path="{{ path_src }}" state=directory
+
+- name: Openshift provisioning
+  git: repo=https://github.com/pedro-r-marques/openshift-ansible dest="{{ path_src }}/openshift-ansible" version=opencontrail update=no
+
+- copy: src=inventory.cluster dest="{{ path_src }}/openshift-ansible/inventory/byo/hosts"
+
+- name: Copy deployment playbooks
+  copy: src="{{ item }}" dest="{{ path_src }}/openshift-ansible/playbooks/byo"
+  with_items:
+    - system-install.yml
+    - opencontrail.yml
+    - opencontrail_provision.yml
+    - openshift_provision.yml
+    - applications.yml
+
+- name: variable substitution
+  command: sed -i "s/VAR_AWS_REGION/{{ aws_region }}/" "{{ path_src }}/openshift-ansible/playbooks/byo/{{ item }}"
+  with_items:
+    - system-install.yml
+    - opencontrail.yml
+    - opencontrail_provision.yml
+
+- name: Copy registry certificate
+  copy: src=registry.crt dest="{{ path_src }}/openshift-ansible/playbooks/byo"
+
+- name: Copy deployment template patch
+  copy: src=rails-postgresql.patch dest="{{ path_src }}/openshift-ansible/playbooks/byo"
+
+- copy: src=ansible.cfg dest="{{ path_src }}/openshift-ansible"
+
+- name: Extract opencontrail roles
+  unarchive: src=container-networking-ansible.tgz dest="{{ path_src }}/openshift-ansible"
+

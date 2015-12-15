@@ -50,6 +50,12 @@ def main():
         return d
 
     data = map(subnet_data, subnets)
-    module.exit_json(changed=False, vpc_id=vpc.id, subnets=data)
+    facts = {
+        'ec2_vpc': {
+            'id': vpc.id,
+            'subnets': data
+        }
+    }
+    module.exit_json(changed=False, ansible_facts=facts)
 
 main()

@@ -1,0 +1,24 @@
+---
+- name: epel 7
+  yum: name="http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm" state=present
+
+- name: Python requirements
+  yum: name="{{ item }}" state=present
+  with_items:
+    - gcc
+    - openssl-devel
+    - python-devel
+    - python-dns
+    - python-pip
+    - python-netaddr
+    - python-markupsafe
+    - pyOpenSSL
+    - util-linux
+    - libffi-devel
+    - python-cryptography
+
+- name: Requires ansible
+  pip: name=ansible state=present
+
+- name: Requires git
+  yum: name=git state=present

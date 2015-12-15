@@ -1,0 +1,12 @@
+server:
+    interface: 0.0.0.0
+    access-control: 10.0.0.0/8 allow
+    verbosity: 1
+
+forward-zone:
+    name: "cluster.local."
+    forward-addr: {{ hostvars[groups['masters'][0]]['instance_ip'] }}
+
+forward-zone:
+    name: "."
+    forward-addr: {{ aws_dns_resolver }}

@@ -1,0 +1,52 @@
+--- /usr/share/openshift/examples/quickstart-templates/rails-postgresql.json	2016-01-04 23:35:22.893340775 +0000
++++ rails-postgresql.json	2016-01-08 19:04:41.531340775 +0000
+@@ -73,7 +73,9 @@
+           "type": "Git",
+           "git": {
+             "uri": "${SOURCE_REPOSITORY_URL}",
+-            "ref": "${SOURCE_REPOSITORY_REF}"
++            "ref": "${SOURCE_REPOSITORY_REF}",
++            "httpProxy": "http://172.30.0.2:3128",
++            "httpsProxy": "http://172.30.0.2:3128"
+           },
+           "contextDir": "${CONTEXT_DIR}"
+         },
+@@ -84,7 +86,17 @@
+               "kind": "ImageStreamTag",
+               "namespace": "openshift",
+               "name": "ruby:2.2"
+-            }
++            },
++            "env": [
++                {
++                    "name": "http_proxy",
++                    "value": "http://172.30.0.2:3128"
++                },
++                {
++                    "name": "https_proxy",
++                    "value": "http://172.30.0.2:3128"
++                }
++            ]
+           }
+         },
+         "output": {
+@@ -159,7 +171,8 @@
+           "metadata": {
+             "name": "rails-postgresql-example",
+             "labels": {
+-              "name": "rails-postgresql-example"
++              "name": "rails-postgresql-example",
++              "opencontrail.org/services": "default"
+             }
+           },
+           "spec": {
+@@ -290,7 +303,8 @@
+           "metadata": {
+             "name": "${DATABASE_SERVICE_NAME}",
+             "labels": {
+-              "name": "${DATABASE_SERVICE_NAME}"
++              "name": "${DATABASE_SERVICE_NAME}",
++              "opencontrail.org/services": "default"
+             }
+           },
+           "spec": {

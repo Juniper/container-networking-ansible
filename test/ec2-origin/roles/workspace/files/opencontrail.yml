@@ -1,0 +1,79 @@
+---
+# This playbook runs the opencontrail role
+#
+- hosts:
+    - all
+  sudo: yes
+  tasks:
+    - lineinfile:
+        dest: /etc/sysconfig/docker-storage-setup
+        regexp: "^(DEVS=)"
+        line: "DEVS=/dev/xvdf"
+        create: yes
+
+    - lineinfile:
+        dest: /etc/sysconfig/docker-storage-setup
+        regexp: "^(VG=)"
+        line: "VG=ebs"
+
+- hosts:
+    - all
+  sudo: yes
+  roles:
+    - openshift_facts
+    - docker
+  tags:
+    - docker
+  vars:
+    docker_udev_workaround: true
+
+- hosts:
+    - all
+  sudo: yes
+  tasks:
+    - lineinfile:
+        dest: /etc/sysconfig/docker
+        regexp: "^http_proxy="
+        line: "http_proxy={{ opencontrail_http_proxy }}"
+      notify:
+        - restart docker
+    - lineinfile:
+        dest: /etc/sysconfig/docker
+        regexp: "^https_proxy="
+        line: "https_proxy={{ opencontrail_http_proxy }}"
+      notify:
+        - restart docker
+    - lineinfile:
+        dest: /etc/sysconfig/docker
+        regexp: "^no_proxy="
+        line: "no_proxy=.dev.opencontrail.org,.compute.internal"
+      notify:
+        - restart docker
+    - lineinfile:
+        dest: /etc/sysconfig/docker
+        regexp: "^(#|)ADD_REGISTRY="
+        line: "ADD_REGISTRY=--add-registry registry.VAR_AWS_REGION.dev.opencontrail.org:5000"
+      notify:
+        - restart docker
+
+    - file: path=/etc/docker/certs.d/registry.VAR_AWS_REGION.dev.opencontrail.org:5000 state=directory
+    - copy: src=registry.crt dest=/etc/docker/certs.d/registry.VAR_AWS_REGION.dev.opencontrail.org:5000/ca.crt
+      notify:
+        - restart docker
+  handlers:
+    - name: restart docker
+      service: name=docker state=restarted
+
+- hosts:
+    - masters
+    - nodes
+    - gateways
+  sudo: yes
+  roles:
+    - openshift_facts
+    - opencontrail_facts
+    - opencontrail
+  vars:
+    opencontrail_cluster_type: openshift
+  tags:
+    - opencontrail

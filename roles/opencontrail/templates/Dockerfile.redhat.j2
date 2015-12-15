@@ -9,6 +9,8 @@ RUN git config --global https.proxy {{ opencontrail_build_http_proxy }}
 {% endif %}
 RUN {{ ansible_pkg_mgr }} install -y automake flex bison gcc gcc-c++ boost boost-devel libxml2-devel python-lxml
 RUN yum install -y yum-utils
+# centos mirror alias vault.centos.org resolves to machines that are out of sync
+RUN sed -e 's/http:\/\/vault.centos.org\//http:\/\/mirror.centos.org\/centos\//' -i /etc/yum.repos.d/CentOS-Vault.repo
 # When the running system is an older version compared to the container install the vault repository
 RUN release=$(awk '{print $4;}' /etc/redhat-release); if [ $release != "{{ ansible_distribution_version }} " ]; then yum-config-manager --enable C{{ ansible_distribution_version }}-base; fi
 # On centos the kernel package name does not match the kernel name

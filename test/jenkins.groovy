@@ -9,7 +9,7 @@ def getDeployerHostname() {
     def hostname
 
     for (line in inventory.split('\n')) {
-        if (line == '[management]') {
+        if (line == '[deployer]') {
            section = true
            continue
         }
@@ -27,7 +27,7 @@ def inventory_match_item(text) {
     matcher ? matcher[0] : null
 }
 
-def deploy(deployer) {
+def k8s_deploy(deployer) {
     playbooks = [
         'resolution.yml',
         'cluster.yml'
@@ -44,7 +44,25 @@ def deploy(deployer) {
     }
 }
 
-def validate(deployer) {
+def origin_deploy(deployer) {
+    playbooks = [
+        'system-install.yml',
+        'opencontrail.yml',
+        'config.yml'
+    ]
+
+    echo "Start deploy stage on ${deployer}"
+
+    // Use an integer as iterator so that it is serializable.
+    // The "sh" step requires local variables to serialize.
+    for (int i = 0; i < playbooks.size(); i++) {
+        def playbook = playbooks[i]
+    	echo "playbook ${playbook}"
+        sh "ssh ${ssh_options} centos@${deployer} ansible-playbook -i src/openshift-ansible/inventory/byo/hosts src/openshift-ansible/playbooks/byo/${playbook}"
+    }
+}
+
+def k8s_validate(deployer) {
     retry(15) {
         try {
             sh "ssh ${ssh_options} ubuntu@${deployer} ansible-playbook -i src/contrib/ansible/inventory src/contrib/ansible/validate.yml"
@@ -55,7 +73,7 @@ def validate(deployer) {
     }
 }
 
-def run_examples(deployer) {
+def k8s_run_examples(deployer) {
     sh "ssh ${ssh_options} ubuntu@${deployer} ansible-playbook -i src/contrib/ansible/inventory src/contrib/ansible/examples.yml"
 }
 
@@ -100,11 +118,11 @@ test_ec2_k8s_basic = {
                     sh 'ansible-playbook -i cluster.status playbook.yml --tags=deployer-install'
                     sh 'ansible-playbook -i cluster.status playbook.yml --tags=workspace'
                     // ssh client steps
-                    deploy(deployer)
+                    k8s_deploy(deployer)
 
-                    validate(deployer)
+                    k8s_validate(deployer)
 
-                    run_examples(deployer)
+                    k8s_run_examples(deployer)
 
                     // verify
                     guestbook_status(deployer)
@@ -113,6 +131,25 @@ test_ec2_k8s_basic = {
                 withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'k8s-provisioner', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY']]) {
                     // delete cluster
                     sh 'ansible-playbook -i cluster.status clean.yml'
+                }
+            }
+        }
+    }
+}
+
+test_ec2_openshift_basic = {
+    node {
+        dir('test/ec2-origin') {
+            withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'k8s-provisioner', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+                // tags: cluster, key-data, deployer-install, workspace
+                sh "ansible-playbook -i localhost playbook.yml -e workspace_id=${env.BUILD_NUMBER}"
+            }
+
+            def deployer = getDeployerHostname()
+
+            try {
+                sshagent(credentials: ["k8s"]) {
+                    origin_deploy()
                 }
             }
         }
@@ -129,6 +166,7 @@ test_noop = {
 def getTestMatrix() {
     tests = [
         ec2_k8s_basic: test_ec2_k8s_basic,
+        ec2_openshift_basic: test_ec2_openshift_basic,
         noop: test_noop,
     ]
     return tests
