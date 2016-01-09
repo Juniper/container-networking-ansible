@@ -73,6 +73,18 @@
         regexp: '^nameserver'
         line: "nameserver {{ opencontrail_dns_forwarder }}"
 
+# OpenShift is automatically starting the KubeProxy on the nodes which adds
+# nat rules to the service addresses. This creates a problem when the docker deamon
+# needs to talk to the docker-registry service.
+- hosts:
+    - nodes
+  sudo: yes
+  tasks:
+    - name: Flush nat rules
+      command: iptables -t nat -F
+    - name: Delete nat tables
+      command: iptables -t nat -X
+
 - hosts:
     - all
   sudo: yes
