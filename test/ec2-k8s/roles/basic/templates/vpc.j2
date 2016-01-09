@@ -1,8 +1,8 @@
 ---
 vpc:
-  id: {{ vpc.vpc_id }}
+  id: {{ ec2_vpc.id }}
   subnets:
-{% for subnet in vpc.subnets %}
+{% for subnet in ec2_vpc.subnets %}
     - {{ subnet.id }}
 {% endfor %}
   gateway:
