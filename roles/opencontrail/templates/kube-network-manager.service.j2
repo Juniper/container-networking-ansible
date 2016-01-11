@@ -4,12 +4,16 @@ Description=Kubernetes OpenContrail plugin
 After=contrail-api.service {{ opencontrail_master_kube_service }}.service
 Requires=contrail-api.service {{ opencontrail_master_kube_service }}.service
 
-[Service]
-ExecStartPre=/usr/bin/docker pull opencontrail/kube-network-manager:{{ opencontrail_kube_release }}
-ExecStartPre=-/usr/bin/docker rm kube-network-manager
-ExecStart=/usr/bin/docker run --name kube-network-manager --net=host -v {{ opencontrail_all_kube_config_dir }}:/etc/kubernetes:z opencontrail/kube-network-manager:{{ opencontrail_kube_release }}
-ExecStop=/usr/bin/docker kill kube-network-manager
-#Restart=on-failure
+{% set service = {
+	'name': 'kube-network-manager',
+	'image': 'opencontrail/kube-network-manager:' + opencontrail_kube_release,
+	'network_mode': 'host',
+	'mounts': [ opencontrail_all_kube_config_dir + ':/etc/kubernetes:z']
+}
+-%}
+
+{% import 'systemd.service.j2' as systemd with context -%}
+{{ systemd.systemd_docker_service(service) }}
 
 [Install]
 WantedBy={{ opencontrail_master_kube_service }}.service

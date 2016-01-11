@@ -9,10 +9,22 @@
   when: not opencontrail_use_systemd
 
 - name: Install control-node service
-  copy: src=contrail-control.service dest=/etc/systemd/system
+  template: src=contrail-control.service.j2 dest=/etc/systemd/system/contrail-control.service
   notify:
     - reload systemd
   when: opencontrail_use_systemd
+
+- name: Docker image ids (control)
+  command: docker images -q "{{ item }}"
+  with_items:
+    - "opencontrail/control:{{ opencontrail_all_release }}"
+  register: image_ids
+  always_run: true
+
+- name: Pull docker images (control)
+  command: docker pull "{{ item.item }}"
+  with_items: image_ids.results
+  when: not item.stdout
 
 - name: Start control-node service
   service: name="contrail-control" state=started

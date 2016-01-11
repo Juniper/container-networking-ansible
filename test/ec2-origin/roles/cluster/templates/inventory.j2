@@ -20,7 +20,7 @@ deployment_type=origin
 
 openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider', 'filename': '/etc/openshift/htpasswd'}]
 
-docker_additional_registries=registry.{{ aws_region }}.dev.opencontrail.org:5000
+cli_docker_additional_registries=registry.{{ aws_region }}.dev.opencontrail.org:5000
 
 use_openshift_sdn = false
 sdn_network_plugin_name = opencontrail

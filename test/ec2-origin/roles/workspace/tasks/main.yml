@@ -29,8 +29,13 @@
 - name: Copy registry certificate
   copy: src=registry.crt dest="{{ path_src }}/openshift-ansible/playbooks/byo"
 
-- name: Copy deployment template patch
-  copy: src=rails-postgresql.patch dest="{{ path_src }}/openshift-ansible/playbooks/byo"
+- name: Copy files
+  copy: src="{{ item }}" dest="{{ path_src }}/openshift-ansible/playbooks/byo"
+  with_items:
+    - opencontrail_validate.py
+    - deployment_config_set.py
+    - rails-postgresql.patch
+
 
 - copy: src=ansible.cfg dest="{{ path_src }}/openshift-ansible"
 

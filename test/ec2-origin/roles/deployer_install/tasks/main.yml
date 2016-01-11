@@ -18,7 +18,7 @@
     - python-cryptography
 
 - name: Requires ansible
-  pip: name=ansible state=present
+  pip: name=ansible state=present version=1.9.4
 
 - name: Requires git
   yum: name=git state=present
