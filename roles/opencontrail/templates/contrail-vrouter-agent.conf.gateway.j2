@@ -21,4 +21,4 @@ ip_blocks={{ opencontrail_public_subnet }}
 routing_instance=default-domain:{{ opencontrail_cluster_services_namespace }}:service-default:service-default
 interface=gateway1
 ip_blocks={{ opencontrail_all_service_addresses }}
-routes={{ opencontrail_host_ipaddr }} {% if 'address' in ansible_default_ipv4 %}{{ [ansible_default_ipv4.address, ansible_default_ipv4.netmask | netmask2prefixlen ] | join('/') }}{% endif %}
+routes={{ opencontrail_host_ipaddr }} {% if 'address' in ansible_default_ipv4 and ansible_default_ipv4.address != opencontrail_host_address -%}{{ [ansible_default_ipv4.address, ansible_default_ipv4.netmask | netmask2prefixlen ] | join('/') }}{% endif -%} {% if opencontail_gateway_extra_infra_prefixes is defined -%}{{ opencontail_gateway_extra_infra_prefixes }}{% endif -%}

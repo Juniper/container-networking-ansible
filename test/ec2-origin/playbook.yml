@@ -1,0 +1,33 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  roles:
+    - cluster
+  tags:
+    - cluster
+  vars:
+    workspace_id: 01
+
+- hosts: jenkins-master
+  gather_facts: False
+  roles:
+    - key_data
+  tags:
+    - key-data
+
+- hosts: deployer
+  sudo: yes
+  gather_facts: False
+  roles:
+    - deployer_install
+    - dns_forwarder
+  tags:
+    - deployer-install
+
+- hosts: deployer
+  gather_facts: False
+  roles:
+    - workspace
+  tags:
+    - workspace

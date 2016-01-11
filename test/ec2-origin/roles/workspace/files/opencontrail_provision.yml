@@ -1,0 +1,98 @@
+---
+#
+# Playbook that runs after openshift is installed in order to provision
+# the contrail-api components.
+#
+- hosts:
+    - masters
+  sudo: yes
+  roles:
+    - openshift_facts
+    - os_firewall
+  vars:
+    os_firewall_use_firewalld: false
+    os_firewall_allow:
+      - service: contrail-api
+        port: 8082/tcp
+      - service: xmpp
+        port: 5269/tcp
+
+- hosts:
+    - masters
+  sudo: yes
+  tasks:
+    - name: Add kubernetes service address to /etc/hosts
+      lineinfile:
+        dest: /etc/hosts
+        line: '{{ ansible_default_ipv4.address }} kubernetes.default.svc'
+
+    - name: Use kubernetes.default.svc as the cluster address
+      replace:
+        dest: /etc/origin/master/openshift-master.kubeconfig
+        regexp: 'https://ip-[\w\.\-]+\.compute\.internal:8443'
+        replace: 'https://kubernetes.default.svc:8443'
+      notify:
+        - restart openshift-master
+
+    - name: openshift-master proxy configuration (noproxy)
+      lineinfile:
+        dest: /etc/sysconfig/origin-master
+        regexp: '^(#|)NO_PROXY='
+        line: "NO_PROXY=localhost,127.0.0.1,::1,{{ ansible_default_ipv4.address }},{{ ansible_hostname }},.dev.opencontrail.org,.compute.internal,.cluster.local,kubernetes.default.svc"
+      notify:
+        - restart openshift-master
+
+    - name: openshift-master proxy configuration (http)
+      lineinfile:
+        dest: /etc/sysconfig/origin-master
+        regexp: '^(#|)HTTP_PROXY='
+        line: "HTTP_PROXY=http://web-proxy.VAR_AWS_REGION.dev.opencontrail.org:3128"
+      notify:
+        - restart openshift-master
+
+    - name: openshift-master proxy configuration (https)
+      lineinfile:
+        dest: /etc/sysconfig/origin-master
+        regexp: '^(#|)HTTPS_PROXY='
+        line: "HTTPS_PROXY=http://web-proxy.VAR_AWS_REGION.dev.opencontrail.org:3128"
+      notify:
+        - restart openshift-master
+
+
+  handlers:
+    - name: restart openshift-master
+      service: name=origin-master state=restarted
+
+- hosts:
+    - gateways
+  sudo: yes
+  tasks:
+    - name: modify resolv.conf
+      lineinfile:
+        dest: /etc/resolv.conf
+        regexp: '^nameserver'
+        line: "nameserver {{ opencontrail_dns_forwarder }}"
+
+# OpenShift is automatically starting the KubeProxy on the nodes which adds
+# nat rules to the service addresses. This creates a problem when the docker deamon
+# needs to talk to the docker-registry service.
+- hosts:
+    - nodes
+  sudo: yes
+  tasks:
+    - name: Flush nat rules
+      command: iptables -t nat -F
+    - name: Delete nat tables
+      command: iptables -t nat -X
+
+- hosts:
+    - all
+  sudo: yes
+  # workaround for issue with 'delegate_to' used to provision the virtual-router object.
+  serial: 1
+  roles:
+    - openshift_facts
+    - opencontrail_facts
+    - opencontrail_provision
+  vars:
+    opencontrail_cluster_type: openshift

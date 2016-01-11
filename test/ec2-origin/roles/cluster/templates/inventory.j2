@@ -1,0 +1,59 @@
+[OSEv3:children]
+masters
+nodes
+etcd
+
+# Set variables common for all OSEv3 hosts
+[OSEv3:vars]
+# SSH user, this user should allow ssh based auth without requiring a
+# password. If using ssh key based auth, then the key should be managed by an
+# ssh agent.
+ansible_ssh_user=centos
+
+# If ansible_ssh_user is not root, ansible_sudo must be set to true and the
+# user must be configured for passwordless sudo
+ansible_sudo=true
+
+# deployment type valid values are origin, online and enterprise
+#deployment_type=atomic-enterprise
+deployment_type=origin
+
+openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider', 'filename': '/etc/openshift/htpasswd'}]
+
+docker_additional_registries=registry.{{ aws_region }}.dev.opencontrail.org:5000
+
+use_openshift_sdn = false
+sdn_network_plugin_name = opencontrail
+
+[opencontrail:children]
+masters
+nodes
+gateways
+ 
+[opencontrail:vars]
+opencontrail_public_subnet=172.16.{{ 32 + workspace_id }}.0/24
+opencontrail_http_proxy=http://web-proxy.{{ aws_region }}.dev.opencontrail.org:3128
+opencontrail_kube_release=origin-1.1
+opencontrail_dns_forwarder={{ origin_deployer.tagged_instances[0].private_ip }}
+opencontail_gateway_extra_infra_prefixes={{ private_subnet.cidr_block }}
+
+[masters]
+{% for instance in origin_master.tagged_instances %}
+origin-master-{{ loop.index }} ansible_ssh_host={{ instance.private_ip }}
+{% endfor %}
+
+[etcd]
+{% for instance in origin_master.tagged_instances %}
+origin-master-{{ loop.index }} ansible_ssh_host={{ instance.private_ip }}
+{% endfor %}
+
+[gateways]
+{% for instance in origin_gateway.tagged_instances %}
+origin-gateway-{{ loop.index }} ansible_ssh_host={{ instance.private_ip }}
+{% endfor %}
+
+[nodes]
+{% for instance in origin_nodes.tagged_instances %}
+origin-node-{{ loop.index }} ansible_ssh_host={{ instance.private_ip }}
+{% endfor %}
+

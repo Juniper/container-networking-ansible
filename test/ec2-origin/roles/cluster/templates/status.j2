@@ -1,0 +1,18 @@
+[deployer]
+{{ origin_deployer.tagged_instances[0].public_dns_name }} id={{ origin_deployer.tagged_instances[0].id }} ansible_ssh_user={{ ssh_user }}
+
+[masters]
+{% for instance in origin_master.tagged_instances %}
+origin-master-{{ loop.index }} id={{ instance.id }} instance_ip={{ instance.private_ip }}
+{% endfor %}
+
+[gateways]
+{% for instance in origin_gateway.tagged_instances %}
+origin-gateway-{{ loop.index }} id={{ instance.id }}
+{% endfor %}
+
+[nodes]
+{% for instance in origin_nodes.tagged_instances %}
+origin-node-{{ loop.index }} id={{ instance.id }}
+{% endfor %}
+

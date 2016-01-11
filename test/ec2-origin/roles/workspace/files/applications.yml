@@ -1,0 +1,23 @@
+---
+- hosts:
+    - masters
+  tasks:
+    - name: Create test project
+      command: oc new-project test --description="Test project"
+
+    - file: path="{{ tmp_dir }}" state=directory
+
+    - name: Copy example file
+      copy:
+        src: /usr/share/openshift/examples/quickstart-templates/rails-postgresql.json
+        remote_src: true
+        dst: "{{ tmp_dir }}"
+
+    - name: Patch example
+      patch: src=rails-postgresql.json basedir="{{ tmp_dir }}"
+
+    - name: Launch rails-postgresql application
+      command: oc new-app "{{ tmp_dir }}/rails-postgresql.json"
+
+  vars:
+    tmp_dir: /home/centos/test

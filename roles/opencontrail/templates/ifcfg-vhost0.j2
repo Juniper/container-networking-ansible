@@ -3,3 +3,6 @@ BOOTPROTO=none
 DEVICETYPE=vhost
 IPADDR="{{ opencontrail_host_ipaddr }}"
 PHYSDEV="{{ opencontrail_host_interface }}"
+{% if opencontrail_host_gateway -%}
+GATEWAY={{ opencontrail_host_gateway }}
+{% endif -%}

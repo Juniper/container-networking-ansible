@@ -1,0 +1,9 @@
+---
+# Executed with the inventory created by the playbook.
+#   ansible-playbook -i cluster.status clean.yml
+#
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  roles:
+    - clean

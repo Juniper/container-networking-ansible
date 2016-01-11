@@ -4,17 +4,16 @@
     region: "{{ aws_region }}"
     resource_tags:
       "Name": opencontrail-ci-vpc
-  register: vpc
 
 - set_fact:
-   public_subnet: "{{ vpc.subnets | selectattr('tags', 'equalto', dict(Name='opencontrail-ci-public')) | first}}"
+   public_subnet: "{{ ec2_vpc.subnets | selectattr('tags', 'equalto', dict(Name='opencontrail-ci-public')) | first}}"
 
 - name: Deployer security-group
   ec2_group:
     name: k8s-basic-deployer
-    description: "k8s deplopyer security-group"
+    description: "k8s deployer security-group"
     region: "{{ aws_region }}"
-    vpc_id: "{{ vpc.vpc_id }}"
+    vpc_id: "{{ ec2_vpc.id }}"
     rules:
       - proto: tcp
         from_port: 22
@@ -29,7 +28,7 @@
   ec2_group:
     name: k8s-basic-sg
     description: "k8s cluster security-group"
-    vpc_id: "{{ vpc.vpc_id }}"
+    vpc_id: "{{ ec2_vpc.id }}"
     region: "{{ aws_region }}"
     rules:
       - proto: all
@@ -59,7 +58,7 @@
     wait: true
   register: k8s_management
 
-- add_host: name='{{ k8s_management.tagged_instances[0].public_dns_name }}' groups=management ansible_ssh_user="{{ ssh_user }}"
+- add_host: name='{{ k8s_management.tagged_instances[0].public_dns_name }}' groups=deployer ansible_ssh_user="{{ ssh_user }}"
 
 - name: Create gateway instance
   ec2:
@@ -117,7 +116,7 @@
 - name: Update the vpc routing table
   ec2_vpc_rtb_update:
     region: "{{ aws_region }}"
-    vpc_id: "{{ vpc.vpc_id }}"
+    vpc_id: "{{ ec2_vpc.id }}"
     subnets:
       - "{{ public_subnet.id }}"
     routes:
