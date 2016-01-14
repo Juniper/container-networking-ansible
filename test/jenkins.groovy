@@ -157,7 +157,7 @@ test_ec2_k8s_basic = {
                     // verify
                     guestbook_status(deployer)
                 }
-            } catch {
+            } catch(ex) {
                 input 'Debug'
             } finally {
                 withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'k8s-provisioner', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY']]) {
@@ -185,7 +185,7 @@ test_ec2_openshift_basic = {
                     origin_deploy(deployer)
                 }
                 input 'Install complete'
-            } catch {
+            } catch(ex) {
                 input 'Debug'
             } finally {
                 withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'k8s-provisioner', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY']]) {
