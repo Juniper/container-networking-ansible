@@ -135,6 +135,8 @@ def match_connected_slaves(status) {
 test_ec2_k8s_basic = {
     node {
         // git url: 'https://github.com/Juniper/container-networking-ansible.git'
+        checkout scm
+
         dir('test/ec2-k8s') {
             withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'k8s-provisioner', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY']]) {
                 // create cluster
@@ -171,6 +173,9 @@ test_ec2_k8s_basic = {
 
 test_ec2_openshift_basic = {
     node {
+        // Checkout repository in workspace.
+        checkout scm
+
         dir('test/ec2-origin') {
             withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'k8s-provisioner', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY']]) {
                 // tags: cluster, key-data, deployer-install, workspace
