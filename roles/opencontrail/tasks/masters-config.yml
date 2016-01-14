@@ -33,18 +33,11 @@
   when: not opencontrail_use_systemd
 
 - name: Install configuration services
-  copy: src="{{item}}" dest=/etc/systemd/system
+  template: src="{{item}}.j2" dest="/etc/systemd/system/{{ item }}"
   with_items:
     - contrail-api.service
     - contrail-schema.service
     - ifmap-server.service
-  notify:
-    - reload systemd
-  when: opencontrail_use_systemd
-
-- name: Install configuration services (from templates)
-  template: src="{{ item }}.j2" dest="/etc/systemd/system/{{ item }}"
-  with_items:
     - kube-network-manager.service
   notify:
     - reload systemd
@@ -55,6 +48,7 @@
   with_items:
     - "opencontrail/config:{{ opencontrail_all_release }}"
     - "opencontrail/ifmap-server:{{ opencontrail_all_release }}"
+    - "opencontrail/kube-network-manager:{{ opencontrail_kube_release }}"
   register: image_ids
   always_run: true
 

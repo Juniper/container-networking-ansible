@@ -1,0 +1,10 @@
+{% macro systemd_docker_service(svc) %}
+[Service]
+ExecStartPre=/usr/bin/docker pull {{ svc.image }}
+ExecStartPre=-/usr/bin/docker rm -f {{ svc.name }}
+ExecStart=/usr/bin/docker run --name {{ svc.name }} {% if 'network_mode' in svc %}--net={{ svc.network_mode }}{% endif %} {%- for var in svc.env|default([]) %} -e {{ var }}{% endfor %} {%- for mount in svc.mounts|default([]) %} -v {{mount}}{% endfor %} {% if 'extra_opts' in svc %}{{ svc.extra_opts }}{% endif %} {{ svc.image }} {% if 'command' in svc %}{{ svc.command }}{% endif %}
+
+ExecStop=/usr/bin/docker stop -t 5 {{ svc.name }}
+Restart=on-failure
+TimeoutStartSec=0
+{% endmacro %}

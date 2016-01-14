@@ -14,17 +14,41 @@ def getDeployerHostname() {
            continue
         }
         if (section) {
-	   hostname = inventory_match_item(line)
+	       hostname = inventory_match_item(line)
            break
         }
     }
     return hostname
 }
 
+def getMasterIP() {
+    def inventory = readFile('inventory.cluster')
+    def section = false
+    def hostname
+
+    for (line in inventory.split('\n')) {
+        if (line == '[masters]') {
+           section = true
+           continue
+        }
+        if (section) {
+           ipAddress = inventory_match_ssh_host(line)
+           break
+        }
+    }
+    return ipAddress    
+}
+
 @NonCPS
 def inventory_match_item(text) {
     def matcher = (text =~ /^[\w-_\.]+/)
     matcher ? matcher[0] : null
+}
+
+@NonCPS
+def inventory_match_ssh_host(text) {
+    def matcher = (text =~ /^[\w-_\.]+\s+ansible_ssh_host=([0-9\.]+)/)
+    matcher ? matcher[1] : null
 }
 
 def k8s_deploy(deployer) {
@@ -48,10 +72,13 @@ def origin_deploy(deployer) {
     playbooks = [
         'system-install.yml',
         'opencontrail.yml',
-        'config.yml'
+        'config.yml',
+        'opencontrail_provison.yml',
+        'openshift_provision.yml'
     ]
 
     echo "Start deploy stage on ${deployer}"
+    masterIP = getMasterIP()
 
     // Use an integer as iterator so that it is serializable.
     // The "sh" step requires local variables to serialize.
@@ -59,6 +86,9 @@ def origin_deploy(deployer) {
         def playbook = playbooks[i]
     	echo "playbook ${playbook}"
         sh "ssh ${ssh_options} centos@${deployer} ansible-playbook -i src/openshift-ansible/inventory/byo/hosts src/openshift-ansible/playbooks/byo/${playbook}"
+        if (i > 0) {
+            sh "ssh ${ssh_options} centos@${deployer} python src/openshift-ansible/playbooks/byo/opencontrail_validate.py --stage ${i} ${masterIP}"
+        }
     }
 }
 
@@ -111,7 +141,7 @@ test_ec2_k8s_basic = {
                 sh "ansible-playbook -i localhost playbook.yml --tags=create -e job_id=${env.BUILD_NUMBER}"
             }
 
-	    def deployer = getDeployerHostname()
+            def deployer = getDeployerHostname()
 
             try {
                 sshagent(credentials: ["k8s"]) {
@@ -127,6 +157,8 @@ test_ec2_k8s_basic = {
                     // verify
                     guestbook_status(deployer)
                 }
+            } catch {
+                input 'Debug'
             } finally {
                 withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'k8s-provisioner', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY']]) {
                     // delete cluster
@@ -142,32 +174,33 @@ test_ec2_openshift_basic = {
         dir('test/ec2-origin') {
             withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'k8s-provisioner', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY']]) {
                 // tags: cluster, key-data, deployer-install, workspace
-                sh "ansible-playbook -i localhost playbook.yml -e workspace_id=${env.BUILD_NUMBER}"
+                sh "ansible-playbook -i localhost playbook.yml --tags=cluster,key-data -e workspace_id=${env.BUILD_NUMBER}"
             }
 
             def deployer = getDeployerHostname()
 
             try {
                 sshagent(credentials: ["k8s"]) {
-                    origin_deploy()
+                    sh "ansible-playbook -i cluster.status playbook.yml --tags=deployer-install,workspace -e workspace_id=${env.BUILD_NUMBER}"
+                    origin_deploy(deployer)
+                }
+                input 'Install complete'
+            } catch {
+                input 'Debug'
+            } finally {
+                withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'k8s-provisioner', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+                    // delete cluster
+                    sh 'ansible-playbook -i cluster.status clean.yml'
                 }
             }
         }
     }
 }
 
-test_noop = {
-    node {
-        // jenkins-<JOB_NAME>-<BUILD_NUMBER>
-        echo env.BUILD_TAG
-    }
-}
-
 def getTestMatrix() {
     tests = [
         ec2_k8s_basic: test_ec2_k8s_basic,
-        ec2_openshift_basic: test_ec2_openshift_basic,
-        noop: test_noop,
+        ec2_openshift_basic: test_ec2_openshift_basic
     ]
     return tests
 }
