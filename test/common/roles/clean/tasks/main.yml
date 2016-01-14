@@ -1,7 +1,32 @@
 ---
+- name: Set facts
+  set_fact:
+    hosts: "{{ groups['all'] | difference(['localhost']) }}"
+- set_fact:
+    instance_ids: "{% set x = [] %}{% for host in hosts %}{% set _ = x.append(hostvars[host]['id']) %}{% endfor %}{{ x }}"
+
+- ec2_vol:
+    instance: "{{ item }}"
+    state: list
+    region: "{{ aws_region }}"
+  with_items: instance_ids
+  register: volume_list
+
+- set_fact:
+    volume_ids: "{% set x = [] %}{% for item in volume_list.results %}{% for vol in item.volumes %}{% if vol['attachment_set']['device'] == '/dev/sda1' %}{% set _ = x.append(vol.id) %}{% endif %}{% endfor %}{% endfor %}{{ x }}"
+
 - name: Delete virtual machines
   ec2:
     state: absent
     region: "{{ aws_region }}"
     instance_ids: "{{ hostvars[item].id }}"
-  with_items: "{{ groups['all'] | difference(['localhost']) }}"
+    wait: yes
+  with_items: "{{ hosts }}"
+
+- name: Delete volumes
+  ec2_vol:
+    region: "{{ aws_region }}"
+    id: "{{ item }}"
+    state: absent
+  with_items: volume_ids
+  ignore_errors: true
