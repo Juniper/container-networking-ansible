@@ -161,8 +161,9 @@ test_ec2_k8s_basic = {
                     guestbook_status(deployer)
                 }
             } catch(ex) {
-                echo ex.getMessage()
-                ex.printStackTrace()
+                def msg = new StringWriter()
+                ex.printStackTrace(new PrintWriter(w))
+                echo "Exception: ${msg}"
                 input 'Debug'
             } finally {
                 withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'k8s-provisioner', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY']]) {
@@ -196,8 +197,9 @@ test_ec2_openshift_basic = {
                 }
                 input 'Install complete'
             } catch(ex) {
-                echo ex.getMessage()
-                ex.printStackTrace()
+                def msg = new StringWriter()
+                ex.printStackTrace(new PrintWriter(w))
+                echo "Exception: ${msg}"
                 input 'Debug'
             } finally {
                 withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'k8s-provisioner', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY']]) {
