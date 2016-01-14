@@ -6,6 +6,20 @@
       shell: "netstat -nt | grep 5269 | wc -l"
       register: xmpp_sessions
 
+    # workaround control-node ifmap bug.
+    - name: Determine control-node docker id
+      shell: "docker ps -f name='k8s.*contrail-control' | awk '!/\/pause/ { print $1; }'"
+      register: _control_status
+
+    - name: Examine control-node logs for NoFqnSet bug
+      shell: docker logs --since=1m "{{ _control_status.stdout }}" | grep NoFqnSet
+      when: _control_status.stdout != ""
+      register: _control_logs_nofqnset
+
+    - name: Restart control-node
+      command: docker restart "{{ _control_status.stdout }}"
+      when: xmpp_sessions.stdout != "3" and _control_logs_nofqnset.stdout != ""
+
     - assert:
         that:
           - xmpp_sessions.stdout == "3"
