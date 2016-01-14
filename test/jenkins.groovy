@@ -179,8 +179,10 @@ test_ec2_openshift_basic = {
         dir('test/ec2-origin') {
             withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'k8s-provisioner', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY']]) {
                 // tags: cluster, key-data, deployer-install, workspace
-                sh "ansible-playbook -i localhost playbook.yml --tags=cluster,key-data -e workspace_id=${env.BUILD_NUMBER}"
+                sh "ansible-playbook -i localhost playbook.yml --tags=cluster -e workspace_id=${env.BUILD_NUMBER}"
             }
+
+            sh "ansible-playbook -i localhost key-data.yml"
 
             def deployer = getDeployerHostname()
 
