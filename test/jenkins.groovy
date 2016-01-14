@@ -24,7 +24,7 @@ def getDeployerHostname() {
 def getMasterIP() {
     def inventory = readFile('inventory.cluster')
     def section = false
-    def hostname
+    def ipAddress
 
     for (line in inventory.split('\n')) {
         if (line == '[masters]') {
@@ -79,6 +79,7 @@ def origin_deploy(deployer) {
 
     echo "Start deploy stage on ${deployer}"
     masterIP = getMasterIP()
+    echo "master: ${masterIP}"
 
     // Use an integer as iterator so that it is serializable.
     // The "sh" step requires local variables to serialize.
@@ -160,6 +161,8 @@ test_ec2_k8s_basic = {
                     guestbook_status(deployer)
                 }
             } catch(ex) {
+                echo ex.getMessage()
+                ex.printStackTrace()
                 input 'Debug'
             } finally {
                 withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'k8s-provisioner', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY']]) {
@@ -193,6 +196,8 @@ test_ec2_openshift_basic = {
                 }
                 input 'Install complete'
             } catch(ex) {
+                echo ex.getMessage()
+                ex.printStackTrace()
                 input 'Debug'
             } finally {
                 withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'k8s-provisioner', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY']]) {
