@@ -31,11 +31,11 @@ nodes
 gateways
  
 [opencontrail:vars]
-opencontrail_public_subnet=172.16.{{ 32 + workspace_id }}.0/24
+opencontrail_public_subnet={{ cluster_public_subnet }}
 opencontrail_http_proxy=http://web-proxy.{{ aws_region }}.dev.opencontrail.org:3128
 opencontrail_kube_release=origin-1.1
 opencontrail_dns_forwarder={{ origin_deployer.tagged_instances[0].private_ip }}
-opencontail_gateway_extra_infra_prefixes={{ private_subnet.cidr_block }}
+opencontail_gateway_extra_infra_prefixes={{ ec2_private_subnet.cidr_block }}
 
 [masters]
 {% for instance in origin_master.tagged_instances %}

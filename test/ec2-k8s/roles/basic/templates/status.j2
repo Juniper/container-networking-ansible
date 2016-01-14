@@ -1,5 +1,5 @@
 [deployer]
-{{ k8s_management.tagged_instances[0].public_dns_name }} id={{ k8s_management.tagged_instances[0].id }}
+{{ k8s_management.tagged_instances[0].public_dns_name }} id={{ k8s_management.tagged_instances[0].id }} ansible_ssh_user=ubuntu
 
 [masters]
 {% for instance in k8s_master.tagged_instances %}
