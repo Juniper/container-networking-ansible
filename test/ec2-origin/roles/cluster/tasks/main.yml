@@ -150,7 +150,7 @@
     region: "{{ aws_region }}"
     vpc_id: "{{ ec2_vpc.id }}"
     subnets:
-      - "{{ private_subnet.id }}"
+      - "{{ ec2_private_subnet.id }}"
     routes:
       - dest: 172.30.0.0/16
         gw: "{{ origin_gateway.tagged_instances[0].id }}"
