@@ -48,7 +48,7 @@ def inventory_match_item(text) {
 @NonCPS
 def inventory_match_ssh_host(text) {
     def matcher = (text =~ /^([\w-_\.]+)\s+ansible_ssh_host=([0-9\.]+)/)
-    matcher ? matcher[0][1] : null
+    matcher ? matcher[0][2] : null
 }
 
 def k8s_deploy(deployer) {
@@ -95,6 +95,7 @@ def origin_deploy(deployer) {
         def playbook = playbooks[i]
     	echo "playbook ${playbook}"
         sh "ssh ${ssh_options} centos@${deployer} '(cd src/openshift-ansible; ansible-playbook -i inventory/byo/hosts playbooks/byo/${playbook})'"
+        echo "${playbook} success"
         if (i > 0) {
             sh "ssh ${ssh_options} centos@${deployer} python src/openshift-ansible/playbooks/byo/opencontrail_validate.py --stage ${i} ${masterIP}"
         }
@@ -169,6 +170,7 @@ test_ec2_k8s_basic = {
                     guestbook_status(deployer)
                 }
             } catch(ex) {
+                echo "${ex}"
                 input 'Debug'
                 throw ex
             } finally {
@@ -203,6 +205,7 @@ test_ec2_openshift_basic = {
                 }
                 input 'Install complete'
             } catch(ex) {
+                echo "${ex}"
                 input 'Debug'
                 throw ex
             } finally {
