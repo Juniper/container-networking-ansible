@@ -73,7 +73,7 @@ def origin_deploy(deployer) {
         'system-install.yml',
         'opencontrail.yml',
         'config.yml',
-        'opencontrail_provison.yml',
+        'opencontrail_provision.yml',
         'openshift_provision.yml'
     ]
 
