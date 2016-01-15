@@ -95,8 +95,8 @@ def origin_deploy(deployer) {
         def playbook = playbooks[i]
     	echo "playbook ${playbook}"
         sh "ssh ${ssh_options} centos@${deployer} '(cd src/openshift-ansible; ansible-playbook -i inventory/byo/hosts playbooks/byo/${playbook})'"
-        echo "${playbook} success"
-        if (i > 0) {
+        // version 1.15 of the script-security plugin allows less-than but not greater-than comparissons
+        if (0 < i) {
             sh "ssh ${ssh_options} centos@${deployer} python src/openshift-ansible/playbooks/byo/opencontrail_validate.py --stage ${i} ${masterIP}"
         }
     }
