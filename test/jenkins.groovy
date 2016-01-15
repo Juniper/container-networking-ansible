@@ -52,12 +52,12 @@ def inventory_match_ssh_host(text) {
 }
 
 def k8s_deploy(deployer) {
-    playbooks = [
+    def playbooks = [
         'resolution.yml',
         'cluster.yml'
     ]
 
-    echo "Start deploy stage on ${deployer}"
+    echo "Start k8s deploy stage on ${deployer}"
 
     // Use an integer as iterator so that it is serializable.
     // The "sh" step requires local variables to serialize.
@@ -69,7 +69,7 @@ def k8s_deploy(deployer) {
 }
 
 def origin_deploy(deployer) {
-    playbooks = [
+    def playbooks = [
         'system-install.yml',
         'opencontrail.yml',
         'config.yml',
@@ -77,7 +77,7 @@ def origin_deploy(deployer) {
         'openshift_provision.yml'
     ]
 
-    echo "Start deploy stage on ${deployer}"
+    echo "Start openshift deploy stage on ${deployer}"
 
     def masterIP
 
@@ -94,7 +94,7 @@ def origin_deploy(deployer) {
     for (int i = 0; i < playbooks.size(); i++) {
         def playbook = playbooks[i]
     	echo "playbook ${playbook}"
-        sh "ssh ${ssh_options} centos@${deployer} ansible-playbook -i src/openshift-ansible/inventory/byo/hosts src/openshift-ansible/playbooks/byo/${playbook}"
+        sh "ssh ${ssh_options} centos@${deployer} '(cd src/openshift-ansible; ansible-playbook -i inventory/byo/hosts playbooks/byo/${playbook})'"
         if (i > 0) {
             sh "ssh ${ssh_options} centos@${deployer} python src/openshift-ansible/playbooks/byo/opencontrail_validate.py --stage ${i} ${masterIP}"
         }
