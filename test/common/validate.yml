@@ -8,7 +8,7 @@
 
     # workaround control-node ifmap bug.
     - name: Determine control-node docker id
-      shell: "docker ps -f name='k8s.*contrail-control' | awk '!/\/pause/ { print $1; }'"
+      shell: "docker ps -f name='k8s.*contrail-control' | awk '!/\\/pause/ { print $1; }'"
       register: _control_status
 
     - name: Examine control-node logs for NoFqnSet bug

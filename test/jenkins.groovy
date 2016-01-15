@@ -21,34 +21,10 @@ def getDeployerHostname() {
     return hostname
 }
 
-def getMasterIP() {
-    def inventory = readFile('inventory.cluster')
-    def section = false
-    def ipAddress
-
-    for (line in inventory.split('\n')) {
-        if (line == '[masters]') {
-           section = true
-           continue
-        }
-        if (section) {
-           ipAddress = inventory_match_ssh_host(line)
-           break
-        }
-    }
-    return ipAddress    
-}
-
 @NonCPS
 def inventory_match_item(text) {
     def matcher = (text =~ /^[\w-_\.]+/)
     matcher ? matcher[0] : null
-}
-
-@NonCPS
-def inventory_match_ssh_host(text) {
-    def matcher = (text =~ /^([\w-_\.]+)\s+ansible_ssh_host=([0-9\.]+)/)
-    matcher ? matcher[0][2] : null
 }
 
 def k8s_deploy(deployer) {
@@ -79,16 +55,6 @@ def origin_deploy(deployer) {
 
     echo "Start openshift deploy stage on ${deployer}"
 
-    def masterIP
-
-    try {
-        masterIP = getMasterIP()
-    } catch (ex) {
-        echo "${ex}"
-        throw ex
-    }
-    echo "master: ${masterIP}"
-
     // Use an integer as iterator so that it is serializable.
     // The "sh" step requires local variables to serialize.
     for (int i = 0; i < playbooks.size(); i++) {
@@ -97,7 +63,7 @@ def origin_deploy(deployer) {
         sh "ssh ${ssh_options} centos@${deployer} '(cd src/openshift-ansible; ansible-playbook -i inventory/byo/hosts playbooks/byo/${playbook})'"
         // version 1.15 of the script-security plugin allows less-than but not greater-than comparissons
         if (0 < i) {
-            sh "ssh ${ssh_options} centos@${deployer} python src/openshift-ansible/playbooks/byo/opencontrail_validate.py --stage ${i} ${masterIP}"
+            sh "ssh ${ssh_options} centos@${deployer} '(cd src/openshift-ansible; python playbooks/byo/opencontrail_validate.py --stage ${i} inventory/byo/hosts)'"
         }
     }
 }
