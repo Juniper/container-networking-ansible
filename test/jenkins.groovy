@@ -78,7 +78,19 @@ def origin_deploy(deployer) {
     ]
 
     echo "Start deploy stage on ${deployer}"
-    masterIP = getMasterIP()
+
+    def masterIP
+
+    try {
+        node {
+            masterIP = getMasterIP()
+        }
+    } catch (ex) {
+        def msg = new StringWriter()
+        ex.printStackTrace(new PrintWriter(w))
+        echo msg
+        throw ex
+    }
     echo "master: ${masterIP}"
 
     // Use an integer as iterator so that it is serializable.
@@ -161,10 +173,8 @@ test_ec2_k8s_basic = {
                     guestbook_status(deployer)
                 }
             } catch(ex) {
-                def msg = new StringWriter()
-                ex.printStackTrace(new PrintWriter(w))
-                echo "Exception: ${msg}"
                 input 'Debug'
+                throw ex
             } finally {
                 withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'k8s-provisioner', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY']]) {
                     // delete cluster
@@ -197,10 +207,8 @@ test_ec2_openshift_basic = {
                 }
                 input 'Install complete'
             } catch(ex) {
-                def msg = new StringWriter()
-                ex.printStackTrace(new PrintWriter(w))
-                echo "Exception: ${msg}"
                 input 'Debug'
+                throw ex
             } finally {
                 withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'k8s-provisioner', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY']]) {
                     // delete cluster
