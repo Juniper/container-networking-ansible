@@ -82,13 +82,9 @@ def origin_deploy(deployer) {
     def masterIP
 
     try {
-        node {
-            masterIP = getMasterIP()
-        }
+        masterIP = getMasterIP()
     } catch (ex) {
-        def msg = new StringWriter()
-        ex.printStackTrace(new PrintWriter(w))
-        echo msg
+        echo "${ex}"
         throw ex
     }
     echo "master: ${masterIP}"
