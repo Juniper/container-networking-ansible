@@ -47,8 +47,8 @@ def inventory_match_item(text) {
 
 @NonCPS
 def inventory_match_ssh_host(text) {
-    def matcher = (text =~ /^[\w-_\.]+\s+ansible_ssh_host=([0-9\.]+)/)
-    matcher ? matcher[1] : null
+    def matcher = (text =~ /^([\w-_\.]+)\s+ansible_ssh_host=([0-9\.]+)/)
+    matcher ? matcher[0][1] : null
 }
 
 def k8s_deploy(deployer) {
