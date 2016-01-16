@@ -46,7 +46,7 @@
     - lineinfile:
         dest: /etc/sysconfig/docker
         regexp: "^no_proxy="
-        line: "no_proxy=.dev.opencontrail.org,.compute.internal"
+        line: "no_proxy=.dev.opencontrail.org,.compute.internal,{{ registry_svc_address }}"
       notify:
         - restart docker
     - lineinfile:
@@ -63,6 +63,9 @@
   handlers:
     - name: restart docker
       service: name=docker state=restarted
+  vars:
+    opencontrail_all_service_addresses: "{{ openshift_master_portal_net | default('172.30.0.0/16') }}"
+    registry_svc_address: "{{ opencontrail_all_service_addresses | ipaddr('net') | ipaddr(32) | ipaddr('address')}}"
 
 - hosts:
     - masters
