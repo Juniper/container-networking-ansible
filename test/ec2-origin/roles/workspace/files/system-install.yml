@@ -29,7 +29,7 @@
       lineinfile:
         dest: /etc/environment
         regexp: "^no_proxy="
-        line: "no_proxy=localhost,127.0.0.1,{{ ansible_default_ipv4['address'] }},169.254.169.254,.dev.opencontrail.org,.svc.cluster.local,.compute.internal,::1,{{ registry_svc_address }}"
+        line: "no_proxy=localhost,127.0.0.1,{{ ansible_default_ipv4['address'] }},169.254.169.254,.dev.opencontrail.org,.svc.cluster.local,.compute.internal,::1"
 
     - name: Set hostname
       hostname: name="{{ inventory_hostname }}"
@@ -43,5 +43,3 @@
 
   vars:
     web_proxy: "http://web-proxy.VAR_AWS_REGION.dev.opencontrail.org:3128"
-    opencontrail_all_service_addresses: "{{ openshift_master_portal_net | default('172.30.0.0/16') }}"
-    registry_svc_address: "{{ opencontrail_all_service_addresses | ipaddr('net') | ipaddr(32) | ipaddr('address')}}"
