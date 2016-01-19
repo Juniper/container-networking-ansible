@@ -18,7 +18,7 @@
 
     - name: Restart control-node
       command: docker restart "{{ _control_status.stdout }}"
-      when: xmpp_sessions.stdout != "3" and _control_logs_nofqnset.stdout != ""
+      when: xmpp_sessions.stdout != "3" and _control_status.stdout != "" and _control_logs_nofqnset.stdout != ""
 
     - assert:
         that:

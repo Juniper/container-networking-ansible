@@ -187,6 +187,11 @@ system services.
 """
 def contrail_gateway_expect_svc_routes(channel, master, gatewayIP):
     stdout, stderr = master.run("oc get svc -o jsonpath='{.items[*].spec.clusterIP}'")
+    if len(stdout) == 0:
+        print 'No service IPs'
+        print '\n'.join(stderr)
+        return False
+
     svc = stdout[0].split()
     if len(svc) < 3:
         print 'Expected at least 3 clusterIPs'
@@ -237,6 +242,10 @@ Ensure that the specified system can reach the service IP addresses.
 """
 def contrail_svc_address_ping(prober, master):
     stdout, stderr = master.run("oc get svc -o jsonpath='{.items[*].spec.clusterIP}'")
+    if len(stdout) == 0:
+        print 'No service IPs'
+        print '\n'.join(stderr)
+        return False
     serviceIPs = stdout[0].split()
     for svc in serviceIPs:
         if svc.endswith('.0.1'):
@@ -334,7 +343,8 @@ def main():
             if not ok:
                 success = False
 
-    contrail_svc_address_ping(master, master)
+    if args.stage >= 4:
+        contrail_svc_address_ping(master, master)
 
     del master
 
