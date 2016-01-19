@@ -1,6 +1,7 @@
 ---
 - name: sanity check the cluster
   hosts: masters
+  sudo: yes
   tasks:
     - name: Check the number of XMPP sessions
       shell: "netstat -nt | grep 5269 | wc -l"
@@ -8,7 +9,7 @@
 
     # workaround control-node ifmap bug.
     - name: Determine control-node docker id
-      shell: "docker ps -f name='k8s.*contrail-control' | awk '!/\\/pause/ { print $1; }'"
+      shell: "docker ps -f name='k8s.*contrail-control' | awk '/^([0-9a-f]+)\\s+opencontrail/ { print $1; }'"
       register: _control_status
 
     - name: Examine control-node logs for NoFqnSet bug
@@ -18,7 +19,7 @@
 
     - name: Restart control-node
       command: docker restart "{{ _control_status.stdout }}"
-      when: xmpp_sessions.stdout != "3" and _control_logs_nofqnset.stdout != ""
+      when: xmpp_sessions.stdout != "3" and _control_status.stdout != "" and _control_logs_nofqnset.stdout != ""
 
     - assert:
         that:
