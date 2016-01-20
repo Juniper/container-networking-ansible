@@ -137,6 +137,7 @@ def contrail_control_instance_status(channel):
     stdout, stderr = channel.run(
         'curl http://localhost:8083/Snh_ShowRoutingInstanceSummaryReq')
     if len(stdout) == 0:
+        print 'Unable to get routing instance summary'
         print '\n'.join(stderr)
         return False
 
@@ -319,7 +320,7 @@ def test_application_status(master, gateway):
         try:
             podInfo = json.loads('\n'.join(stdout))
         except Exception as ex:
-            print ex
+            print 'Unable to decode pod information %s' % ex
             print stderr
             return False
 
@@ -338,16 +339,22 @@ def test_application_status(master, gateway):
             break
         time.sleep(180)
 
-    stdout, stderr = gateway.run(
-        "no_proxy=* curl http://%s:%d/articles" %
-        ('rails-postgresql-example-test.router.default.svc.cluster.local', 80))
-    pattern = re.compile(r'Listing articles')
-    for line in stdout:
-        if pattern.search(line):
-            print "Application OK"
-            return True
+    for _ in range(6):
+        stdout, stderr = gateway.run(
+            "no_proxy=* curl http://%s:%d/articles" %
+            ('rails-postgresql-example-test.router.default.svc.cluster.local',
+             80))
+        pattern = re.compile(r'Listing articles')
+        for line in stdout:
+            if pattern.search(line):
+                print "Application OK"
+                return True
+        time.sleep(10)
 
-    print stderr
+    print 'Application stdout:'
+    print '\n'.join(stdout)
+    print 'Application stderr:'
+    print '\n'.join(stderr)
     return False
 
 
