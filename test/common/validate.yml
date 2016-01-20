@@ -4,7 +4,7 @@
   sudo: yes
   tasks:
     - name: Check the number of XMPP sessions
-      shell: "netstat -nt | grep ':5269\s+.*ESTABLISHED'"
+      shell: "netstat -nt | grep ':5269\\s+.*ESTABLISHED'"
       register: _xmpp_sessions
 
     - debug: var=xmpp_sessions.stdout
