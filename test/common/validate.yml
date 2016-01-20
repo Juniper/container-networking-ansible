@@ -4,12 +4,14 @@
   sudo: yes
   tasks:
     - name: Check the number of XMPP sessions
-      shell: "netstat -nt | grep ':5269\\s+.*ESTABLISHED'"
+      shell: "netstat -nt | grep -E ':5269\\s+.*ESTABLISHED'"
       register: _xmpp_sessions
+      ignore_errors: true
 
-    - debug: var=xmpp_sessions.stdout
+    - debug: var=_xmpp_sessions.stdout
     - set_fact:
-        xmmp_session_count: "{{ _xmpp_sessions.stdout_lines | length }}"
+        xmpp_session_count: "{{ _xmpp_sessions.stdout_lines | length }}"
+    - debug: var=xmpp_session_count
 
     # workaround control-node ifmap bug.
     - name: Determine control-node docker id
@@ -20,16 +22,17 @@
       shell: docker logs --since=1m "{{ _control_status.stdout }}" | grep NoFqnSet
       when: _control_status.stdout != ""
       register: _control_logs_nofqnset
+      ignore_errors: true
 
     - debug: var=_control_logs_nofqnset.stdout
 
     - name: Restart control-node
       command: docker restart "{{ _control_status.stdout }}"
-      when: xmpp_session_count != 3 and _control_status.stdout != "" and _control_logs_nofqnset.stdout != ""
+      when: xmpp_session_count|int != 3 and _control_status.stdout != "" and _control_logs_nofqnset.rc == 0
 
     - assert:
         that:
-          - xmpp_session_count == 3
+          - xmpp_session_count|int == 3
 
     # Ensure that the DNS resolver is operational
     - name: Check kube-system pods
