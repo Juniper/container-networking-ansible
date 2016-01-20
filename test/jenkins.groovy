@@ -183,7 +183,6 @@ test_ec2_openshift_basic = {
                     sh "ansible-playbook -i cluster.status playbook.yml --tags=deployer-install,workspace -e workspace_id=${env.BUILD_NUMBER}"
                     origin_deploy(deployer)
                 }
-                input 'Install complete'
             } catch(ex) {
                 echo "${ex}"
                 input 'Debug openshift'
