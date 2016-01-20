@@ -326,16 +326,20 @@ def test_application_status(master, gateway):
 
         run_count = 0
         pending = 0
+        builder = 0
         for item in podInfo['items']:
             if item['status']['phase'] == 'Failed':
                 print 'pod %s Failed' % item['metadata']['name']
                 return False
             elif item['status']['phase'] == 'Running':
+                if item['metadata']['name'].endswith('-build'):
+                    builder += 1
+                    continue
                 run_count += 1
             elif item['status']['phase'] == 'Pending':
                 pending += 1
 
-        if not pending and run_count >= 2:
+        if not pending and not builder and run_count >= 2:
             break
         time.sleep(180)
 
