@@ -1,0 +1,21 @@
+---
+- hosts:
+    - masters
+  gather_facts: false
+  sudo: yes
+  tasks:
+    - name: Ensure services are running
+      service: name="{{ item }}" state=running
+      with_items:
+        - contrail-api
+        - contrail-schema
+        - contrail-control
+        - ifmap-server
+
+- hosts:
+    - nodes
+  gather_facts: false
+  sudo: yes
+  tasks:
+    - name: Ensure agent is running
+      service: name=contrail-vrouter-agent state=running

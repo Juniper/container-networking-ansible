@@ -50,7 +50,8 @@ def origin_deploy(deployer) {
         'opencontrail.yml',
         'config.yml',
         'opencontrail_provision.yml',
-        'openshift_provision.yml'
+        'openshift_provision.yml',
+        'applications.xml'
     ]
 
     echo "Start openshift deploy stage on ${deployer}"
@@ -63,7 +64,19 @@ def origin_deploy(deployer) {
         sh "ssh ${ssh_options} centos@${deployer} '(cd src/openshift-ansible; ansible-playbook -i inventory/byo/hosts playbooks/byo/${playbook})'"
         // version 1.15 of the script-security plugin allows less-than but not greater-than comparissons
         if (0 < i) {
-            sh "ssh ${ssh_options} centos@${deployer} '(cd src/openshift-ansible; python playbooks/byo/opencontrail_validate.py --stage ${i} inventory/byo/hosts)'"
+            try {
+                sh "ssh ${ssh_options} centos@${deployer} '(cd src/openshift-ansible; python playbooks/byo/opencontrail_validate.py --stage ${i} inventory/byo/hosts)'"
+            } catch (AbortException ex) {
+                // openshift config playbook restarts docker and systemd will fail to restart some of the dependent
+                // opencontrail services.
+                if (i == 2) {
+                    sh "ssh ${ssh_options} centos@${deployer} '(cd src/openshift-ansible; ansible-playbook -i inventory/byo/hosts playbooks/byo/systemd_workaround.xml)'"
+                    sleep 60
+                    sh "ssh ${ssh_options} centos@${deployer} '(cd src/openshift-ansible; python playbooks/byo/opencontrail_validate.py --stage ${i} inventory/byo/hosts)'"   
+                } else {
+                    throw ex
+                }
+            }
         }
     }
 }
@@ -72,9 +85,10 @@ def k8s_validate(deployer) {
     retry(15) {
         try {
             sh "ssh ${ssh_options} ubuntu@${deployer} ansible-playbook -i src/contrib/ansible/inventory src/contrib/ansible/validate.yml"
-        } catch (AbortException e) {
-            Thread.sleep(60 * 1000)
-            error('Cluster not ready')
+        } catch (AbortException ex) {
+            msg "k8s_validate: ${ex}"
+            sleep 60
+            throw ex
         }
     }
 }
@@ -89,14 +103,14 @@ def guestbook_status(deployer) {
         try {
             sh "ssh ${ssh_options} ubuntu@${deployer} curl http://172.16.0.252:3000/info > guestbook.status"
             status = readFile('guestbook.status')
-        } catch (AbortException e) {
-            echo e.getMessage()
-            Thread.sleep(60 * 1000)
-            error('Service not responding')
+        } catch (AbortException ex) {
+            echo "${ex}"
+            sleep 60
+            throw ex
         }
         def slaves = match_connected_slaves(status)
         if (slaves != '2') {
-            Thread.sleep(60 * 1000)
+            sleep 60
             error("redis slaves: ${slaves}")
         }
     }
@@ -137,7 +151,7 @@ test_ec2_k8s_basic = {
                 }
             } catch(ex) {
                 echo "${ex}"
-                input 'Debug'
+                input 'Debug k8s'
                 throw ex
             } finally {
                 withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'k8s-provisioner', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY']]) {
@@ -172,7 +186,7 @@ test_ec2_openshift_basic = {
                 input 'Install complete'
             } catch(ex) {
                 echo "${ex}"
-                input 'Debug'
+                input 'Debug openshift'
                 throw ex
             } finally {
                 withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'k8s-provisioner', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY']]) {

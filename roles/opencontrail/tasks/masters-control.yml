@@ -27,6 +27,6 @@
   when: not item.stdout
 
 - name: Start control-node service
-  service: name="contrail-control" state=started
+  service: name="contrail-control" enabled=yes state=started
   when: opencontrail_use_systemd
 
