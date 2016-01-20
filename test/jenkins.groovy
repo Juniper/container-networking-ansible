@@ -51,7 +51,7 @@ def origin_deploy(deployer) {
         'config.yml',
         'opencontrail_provision.yml',
         'openshift_provision.yml',
-        'applications.xml'
+        'applications.yml'
     ]
 
     echo "Start openshift deploy stage on ${deployer}"
@@ -86,7 +86,7 @@ def k8s_validate(deployer) {
         try {
             sh "ssh ${ssh_options} ubuntu@${deployer} ansible-playbook -i src/contrib/ansible/inventory src/contrib/ansible/validate.yml"
         } catch (ex) {
-            msg "k8s_validate: ${ex}"
+            echo "k8s_validate: ${ex}"
             sleep 180
             throw ex
         }
