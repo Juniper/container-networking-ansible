@@ -70,7 +70,7 @@ def origin_deploy(deployer) {
                 // openshift config playbook restarts docker and systemd will fail to restart some of the dependent
                 // opencontrail services.
                 if (i == 2) {
-                    sh "ssh ${ssh_options} centos@${deployer} '(cd src/openshift-ansible; ansible-playbook -i inventory/byo/hosts playbooks/byo/systemd_workaround.xml)'"
+                    sh "ssh ${ssh_options} centos@${deployer} '(cd src/openshift-ansible; ansible-playbook -i inventory/byo/hosts playbooks/byo/systemd_workaround.yml)'"
                     sleep 60
                     sh "ssh ${ssh_options} centos@${deployer} '(cd src/openshift-ansible; python playbooks/byo/opencontrail_validate.py --stage ${i} inventory/byo/hosts)'"   
                 } else {
@@ -85,9 +85,9 @@ def k8s_validate(deployer) {
     retry(15) {
         try {
             sh "ssh ${ssh_options} ubuntu@${deployer} ansible-playbook -i src/contrib/ansible/inventory src/contrib/ansible/validate.yml"
-        } catch (AbortException ex) {
+        } catch (ex) {
             msg "k8s_validate: ${ex}"
-            sleep 60
+            sleep 180
             throw ex
         }
     }
