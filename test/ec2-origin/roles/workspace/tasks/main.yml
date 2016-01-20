@@ -18,6 +18,7 @@
     - opencontrail_provision.yml
     - openshift_provision.yml
     - applications.yml
+    - systemd_workaround.yml
 
 - name: variable substitution
   command: sed -i "s/VAR_AWS_REGION/{{ aws_region }}/" "{{ path_src }}/openshift-ansible/playbooks/byo/{{ item }}"

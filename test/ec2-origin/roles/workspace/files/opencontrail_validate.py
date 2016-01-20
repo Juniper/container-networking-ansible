@@ -117,6 +117,10 @@ Verify that the control-node is not stuck with a deleted routing-instance.
 """
 def contrail_control_instance_status(channel):
     stdout, stderr = channel.run('curl http://localhost:8083/Snh_ShowRoutingInstanceSummaryReq')
+    if len(stdout) == 0:
+        print '\n'.join(stderr)
+        return False
+
     root = xml.etree.ElementTree.fromstringlist(stdout)
     count = 0
     for instance in root.findall('.//ShowRoutingInstance'):
@@ -320,8 +324,8 @@ def main():
     master = Executor(groups['masters'][0])
 
     success = (contrail_api_status(master) and
-        contrail_services_status(master) and
         contrail_docker_status(master, netManager=args.stage >= 2) and
+        contrail_services_status(master) and
         (args.stage < 3 or contrail_xmpp_sessions(master)) and
         (args.stage < 4 or openshift_system_services(master)))
 

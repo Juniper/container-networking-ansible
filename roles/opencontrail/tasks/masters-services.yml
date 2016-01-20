@@ -38,7 +38,7 @@
   when: not item.stdout
 
 - name: master services
-  service: name="{{ item }}" state=started
+  service: name="{{ item }}" enabled=yes state=started
   with_items:
     - cassandra.service
     - zookeeper.service

@@ -7,6 +7,8 @@
       shell: "netstat -nt | grep 5269 | wc -l"
       register: xmpp_sessions
 
+    - debug: var=xmpp_sessions.stdout
+
     # workaround control-node ifmap bug.
     - name: Determine control-node docker id
       shell: "docker ps -f name='k8s.*contrail-control' | awk '/^([0-9a-f]+)\\s+opencontrail/ { print $1; }'"
@@ -16,6 +18,8 @@
       shell: docker logs --since=1m "{{ _control_status.stdout }}" | grep NoFqnSet
       when: _control_status.stdout != ""
       register: _control_logs_nofqnset
+
+    - debug: var=_control_logs_nofqnset.stdout
 
     - name: Restart control-node
       command: docker restart "{{ _control_status.stdout }}"
