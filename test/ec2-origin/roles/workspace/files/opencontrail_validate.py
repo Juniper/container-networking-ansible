@@ -1,3 +1,9 @@
+#!/usr/bin/python
+
+"""
+Sanity check the status of an openshift + opencontrail cluster
+"""
+
 import ConfigParser
 import argparse
 import json
@@ -6,6 +12,8 @@ import re
 import sys
 import time
 import xml.etree.ElementTree
+from datetime import datetime
+
 
 class Executor(object):
     DEFAULT_USERNAME = 'centos'
@@ -39,7 +47,9 @@ def expect_listen_ports(channel, expected):
 
     absent = expected
 
-    regexp = re.compile(r'(tcp\s+[0-9]+\s+[0-9]+\s+([0-9\.]+):([0-9]+)|tcp6\s+[0-9]+\s+[0-9]+\s+:::([0-9]+))\s+(.*)\s+LISTEN')
+    regexp = re.compile(r'(tcp\s+[0-9]+\s+[0-9]+\s+([0-9\.]+):([0-9]+)|'
+                        'tcp6\s+[0-9]+\s+[0-9]+\s+:::([0-9]+))\s+(.*)'
+                        '\s+LISTEN')
     for line in stdout:
         match = regexp.match(line)
         if match:
@@ -52,8 +62,10 @@ def expect_listen_ports(channel, expected):
                 absent.pop(port)
     return absent
 
+
 def expect_docker_running(channel, containerNames):
-    stdout, stderr = channel.run("docker ps --format='{{.ID}} {{.Names}}'", sudo=True)
+    stdout, stderr = channel.run("docker ps --format='{{.ID}} {{.Names}}'",
+                                 sudo=True)
     regexp = re.compile(r'([a-f0-9]+)\s([\w-]+)')
     absent = containerNames
 
@@ -85,8 +97,11 @@ def contrail_services_status(channel):
         return False
     return True
 
+
 def contrail_docker_status(channel, netManager=False):
-    containerNames = ['contrail-control', 'contrail-api', 'contrail-schema', 'ifmap-server']
+    containerNames = [
+        'contrail-control', 'contrail-api', 'contrail-schema', 'ifmap-server'
+    ]
     if netManager:
         containerNames.append('kube-network-manager')
     absent = expect_docker_running(channel, containerNames)
@@ -95,6 +110,7 @@ def contrail_docker_status(channel, netManager=False):
         return False
     return True
 
+
 def contrail_docker_agent(channel, nodeIP):
     absent = expect_docker_running(channel, ['vrouter-agent'])
     if len(absent) > 0:
@@ -102,21 +118,24 @@ def contrail_docker_agent(channel, nodeIP):
         return False
     return True
 
+
 def contrail_api_status(channel):
     stdout, stderr = channel.run('curl http://localhost:8082')
     try:
-        desc = json.loads('\n'.join(stdout))
-    except Exception as ex:
+        json.loads('\n'.join(stdout))
+    except Exception:
         print 'Unable to connect to the contrail-api server'
         print '\n'.join(stderr)
         return False
     return True
 
-"""
-Verify that the control-node is not stuck with a deleted routing-instance.
-"""
+
 def contrail_control_instance_status(channel):
-    stdout, stderr = channel.run('curl http://localhost:8083/Snh_ShowRoutingInstanceSummaryReq')
+    """
+    Verify that the control-node is not stuck with a deleted routing-instance.
+    """
+    stdout, stderr = channel.run(
+        'curl http://localhost:8083/Snh_ShowRoutingInstanceSummaryReq')
     if len(stdout) == 0:
         print '\n'.join(stderr)
         return False
@@ -132,12 +151,14 @@ def contrail_control_instance_status(channel):
 
     return count == 0
 
-"""
-Wait for 180 secs for the sessions to come up.
-"""
+
 def contrail_xmpp_sessions(channel):
+    """
+    Wait for 180 secs for the sessions to come up.
+    """
     for _ in range(18):
-        stdout, stderr = channel.run("netstat -nt | grep -E ':5269\s+.*ESTABLISHED'")
+        stdout, stderr = channel.run(
+            "netstat -nt | grep -E ':5269\s+.*ESTABLISHED'")
         if len(stdout) == 3:
             return True
         time.sleep(10)
@@ -146,11 +167,13 @@ def contrail_xmpp_sessions(channel):
     print '\n'.join(stdout)
     return False
 
-"""
-Ensure that openshift is able to start the docker-registry and router pods.
-This requires the deployer pods to be able to communicate with the master.
-"""
+
 def openshift_system_services(channel):
+    """
+    Ensure that openshift is able to start the docker-registry and router pods.
+    This requires the deployer pods to be able to communicate with the master.
+    """
+
     def patternInList(pattern, pods):
         regexp = re.compile(pattern)
         for pod in pods:
@@ -185,12 +208,15 @@ def openshift_system_services(channel):
     print '\n'.join(stdout)
     return False
 
-"""
-The unicast routing table for the service VRF should have routes for the
-system services.
-"""
+
 def contrail_gateway_expect_svc_routes(channel, master, gatewayIP):
-    stdout, stderr = master.run("oc get svc -o jsonpath='{.items[*].spec.clusterIP}'")
+    """
+    The unicast routing table for the service VRF should have routes for the
+    system services.
+    """
+
+    stdout, stderr = master.run(
+        "oc get svc -o jsonpath='{.items[*].spec.clusterIP}'")
     if len(stdout) == 0:
         print 'No service IPs'
         print '\n'.join(stderr)
@@ -227,7 +253,9 @@ def contrail_gateway_expect_svc_routes(channel, master, gatewayIP):
         return False
 
     absent = svc
-    stdout, stderr = channel.run("curl http://localhost:8085/Snh_Inet4UcRouteReq?uc_index=%d" % vrf_index)
+    stdout, stderr = channel.run(
+        "curl http://localhost:8085/Snh_Inet4UcRouteReq?uc_index=%d" %
+        vrf_index)
     root = xml.etree.ElementTree.fromstringlist(stdout)
     for route in root.findall('.//RouteUcSandeshData'):
         ip = route.find('src_ip')
@@ -241,11 +269,14 @@ def contrail_gateway_expect_svc_routes(channel, master, gatewayIP):
         return False
     return True
 
-"""
-Ensure that the specified system can reach the service IP addresses.
-"""
+
 def contrail_svc_address_ping(prober, master):
-    stdout, stderr = master.run("oc get svc -o jsonpath='{.items[*].spec.clusterIP}'")
+    """
+    Ensure that the specified system can reach the service IP addresses.
+    """
+
+    stdout, stderr = master.run(
+        "oc get svc -o jsonpath='{.items[*].spec.clusterIP}'")
     if len(stdout) == 0:
         print 'No service IPs'
         print '\n'.join(stderr)
@@ -272,13 +303,62 @@ def contrail_svc_address_ping(prober, master):
             success = False
     return success
 
-"""
-Parse the inventory file.
-Expects inventory to have the following format:
-[section]
-hostname ansible_ssh_host=<IP>
-"""
+
+def test_application_status(master, gateway):
+    """ Returns True if the application is running
+
+    Deployment fails is any of the pods is in Error state.
+
+    The test succeeds if the web-front end is reachable.
+    Deployment takes 5/10 mins to complete.
+    """
+    start = datetime.now()
+    while (datetime.now() - start).seconds > (60 * 60):
+        stdout, stderr = master.run(
+            "oc --namespace=test get pods -o json")
+        try:
+            podInfo = json.loads('\n'.join(stdout))
+        except Exception as ex:
+            print ex
+            print stderr
+            return False
+
+        run_count = 0
+        pending = 0
+        for item in podInfo['items']:
+            if item['status']['phase'] == 'Failed':
+                print 'pod %s Failed' % item['metadata']['name']
+                return False
+            elif item['status']['phase'] == 'Running':
+                run_count += 1
+            elif item['status']['phase'] == 'Pending':
+                pending += 1
+
+        if not pending and run_count >= 2:
+            break
+        time.sleep(180)
+
+    stdout, stderr = gateway.run(
+        "no_proxy=* curl http://%s:%d/articles" %
+        ('rails-postgresql-example-test.router.default.svc.cluster.local', 80))
+    pattern = re.compile(r'Listing articles')
+    for line in stdout:
+        if pattern.search(line):
+            print "Application OK"
+            return True
+
+    print stderr
+    return False
+
+
 def inventory_parse(filename):
+    """ Parse the inventory file.
+
+    Expects inventory to have the following format:
+    [section]
+    hostname ansible_ssh_host=<IP>
+    """
+
     group_names = ['masters', 'gateways', 'nodes']
     groups = {}
 
@@ -297,18 +377,21 @@ def inventory_parse(filename):
 
     return groups
 
-"""
-stages:
-  1. OpenContrail is installed (but not provisioned)
-  2. OpenShift is installed
-  3. OpenContrail is provisioned
-  4. OpenShift services are started
 
-common install problems:
-  - control-node rejecting XMPP connections
-  - service-default network marked as deleted on control-node
-"""
 def main():
+    """
+    stages:
+      1. OpenContrail is installed (but not provisioned)
+      2. OpenShift is installed
+      3. OpenContrail is provisioned
+      4. OpenShift services are started
+      5. Test application is deployed
+
+    common install problems:
+      - control-node rejecting XMPP connections
+      - service-default network marked as deleted on control-node
+    """
+
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--stage', type=int, help='Install stage')
@@ -323,14 +406,14 @@ def main():
 
     master = Executor(groups['masters'][0])
 
-    success = (contrail_api_status(master) and
+    success = (
+        contrail_api_status(master) and
         contrail_docker_status(master, netManager=args.stage >= 2) and
         contrail_services_status(master) and
         (args.stage < 3 or contrail_xmpp_sessions(master)) and
-        (args.stage < 4 or openshift_system_services(master)))
-
-    # TODO: add to return result
-    contrail_control_instance_status(master)
+        (args.stage < 4 or openshift_system_services(master)) and
+        (args.stage < 4 or contrail_control_instance_status(master))
+    )
 
     for node in groups['nodes']:
         with Executor(node) as channel:
@@ -341,14 +424,20 @@ def main():
     for gateway in groups['gateways']:
         with Executor(gateway) as channel:
             ok = contrail_docker_agent(channel, gateway)
-            # TODO: add to return result
             if (args.stage >= 4):
-                contrail_gateway_expect_svc_routes(channel, master, gateway)
+                if not contrail_gateway_expect_svc_routes(channel, master,
+                                                          gateway):
+                    ok = False
             if not ok:
                 success = False
 
-    if args.stage >= 4:
-        contrail_svc_address_ping(master, master)
+    if args.stage >= 4 and not contrail_svc_address_ping(master, master):
+        success = False
+
+    if args.stage >= 5:
+        with Executor(groups['gateways'][0]) as channel:
+            if not test_application_status(master, channel):
+                success = False
 
     del master
 
