@@ -87,7 +87,7 @@ def k8s_validate(deployer) {
             sh "ssh ${ssh_options} ubuntu@${deployer} ansible-playbook -i src/contrib/ansible/inventory src/contrib/ansible/validate.yml"
         } catch (ex) {
             echo "k8s_validate: ${ex}"
-            sleep 180
+            sleep 180L
             throw ex
         }
     }
@@ -105,12 +105,12 @@ def guestbook_status(deployer) {
             status = readFile('guestbook.status')
         } catch (AbortException ex) {
             echo "${ex}"
-            sleep 60
+            sleep 60L
             throw ex
         }
         def slaves = match_connected_slaves(status)
         if (slaves != '2') {
-            sleep 60
+            sleep 60L
             error("redis slaves: ${slaves}")
         }
     }
