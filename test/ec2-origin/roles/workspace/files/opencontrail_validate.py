@@ -314,7 +314,7 @@ def test_application_status(master, gateway):
     Deployment takes 5/10 mins to complete.
     """
     start = datetime.now()
-    while (datetime.now() - start).seconds > (60 * 60):
+    while (datetime.now() - start).seconds < (60 * 60):
         stdout, stderr = master.run(
             "oc --namespace=test get pods -o json")
         try:
