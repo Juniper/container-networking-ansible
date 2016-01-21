@@ -7,6 +7,7 @@
     - name: Ensure services are running
       service: name="{{ item }}" state=running
       with_items:
+        - kube-network-manager
         - contrail-api
         - contrail-schema
         - contrail-control
