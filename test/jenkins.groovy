@@ -71,7 +71,8 @@ def origin_deploy(deployer) {
                 // opencontrail services.
                 if (i == 2) {
                     sh "ssh ${ssh_options} centos@${deployer} '(cd src/openshift-ansible; ansible-playbook -i inventory/byo/hosts playbooks/byo/systemd_workaround.yml)'"
-                    sleep 60i
+                    def doSleep = { sleep 60L }
+                    doSleep()
                     sh "ssh ${ssh_options} centos@${deployer} '(cd src/openshift-ansible; python playbooks/byo/opencontrail_validate.py --stage ${i} inventory/byo/hosts)'"   
                 } else {
                     throw ex
