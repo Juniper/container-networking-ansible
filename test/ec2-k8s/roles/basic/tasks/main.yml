@@ -6,7 +6,9 @@
       "Name": opencontrail-ci-vpc
 
 - set_fact:
-   public_subnet: "{{ ec2_vpc.subnets | selectattr('tags', 'equalto', dict(Name='opencontrail-ci-public')) | first}}"
+   ec2_public_subnet: "{{ ec2_vpc.subnets | selectattr('tags', 'equalto', dict(Name='opencontrail-ci-public')) | first}}"
+   k8s_public_subnet: "{% if job_id is defined %}172.16.{{ 8 * (job_id|int % 32) }}.0/24{% else %}172.18.0.0/20{% endif %}"
+   k8s_service_addresses: "{% if job_id is defined %}10.{{ 192 + (job_id|int % 32) }}.0.0/16{% else %}10.64.0.0/16{% endif %}"
 
 - name: Deployer security-group
   ec2_group:
@@ -45,15 +47,15 @@
     image: "{{ ec2_image }}"
     key_name: k8s
     instance_tags:
-      Name: "k8s-mgmt-{{ job_id }}"
-      Cluster: "k8s-ansible-{{ job_id }}"
+      Name: "k8s-mgmt-{{ job_id | default('00') }}"
+      Cluster: "k8s-ansible-{{ job_id | default('00') }}"
     instance_type: m3.medium
     region: "{{ aws_region }}"
-    vpc_subnet_id: "{{ public_subnet.id }}"
+    vpc_subnet_id: "{{ ec2_public_subnet.id }}"
     group_id: "{{ sg_management.group_id }}"
     assign_public_ip: yes
     count_tag:
-      Name: "k8s-mgmt-{{ job_id }}"
+      Name: "k8s-mgmt-{{ job_id | default('00') }}"
     exact_count: 1
     wait: true
   register: k8s_management
@@ -65,17 +67,17 @@
     image: "{{ ec2_image }}"
     key_name: k8s
     instance_tags:
-      Name: "k8s-gateway-{{ job_id }}"
-      Cluster: "k8s-ansible-{{ job_id }}"
+      Name: "k8s-gateway-{{ job_id | default('00') }}"
+      Cluster: "k8s-ansible-{{ job_id | default('00') }}"
     instance_type: m3.medium
     region: "{{ aws_region }}"
-    vpc_subnet_id: "{{ public_subnet.id }}"
+    vpc_subnet_id: "{{ ec2_public_subnet.id }}"
     group_id: "{{ sg_cluster.group_id }}"
     assign_public_ip: yes
     source_dest_check: no
     wait: yes
     count_tag:
-      Name: "k8s-gateway-{{ job_id }}"
+      Name: "k8s-gateway-{{ job_id | default('00') }}"
     exact_count: 1
   register: k8s_gateway
 
@@ -84,15 +86,15 @@
     image: "{{ ec2_image }}"
     key_name: k8s
     instance_tags:
-      Name: "k8s-master-{{ job_id }}"
-      Cluster: "k8s-ansible-{{ job_id }}"
+      Name: "k8s-master-{{ job_id | default('00') }}"
+      Cluster: "k8s-ansible-{{ job_id | default('00') }}"
     instance_type: m3.large
     region: "{{ aws_region }}"
-    vpc_subnet_id: "{{ public_subnet.id }}"
+    vpc_subnet_id: "{{ ec2_public_subnet.id }}"
     group_id: "{{ sg_cluster.group_id }}"
     assign_public_ip: yes        
     count_tag:
-      Name: "k8s-master-{{ job_id }}"
+      Name: "k8s-master-{{ job_id | default('00') }}"
     exact_count: 1
   register: k8s_master
 
@@ -101,15 +103,15 @@
     image: "{{ ec2_image }}"
     key_name: k8s
     instance_tags:
-      Name: "k8s-node-{{ job_id }}"
-      Cluster: "k8s-ansible-{{ job_id }}"
+      Name: "k8s-node-{{ job_id | default('00') }}"
+      Cluster: "k8s-ansible-{{ job_id | default('00') }}"
     instance_type: m3.medium
     region: "{{ aws_region }}"
-    vpc_subnet_id: "{{ public_subnet.id }}"
+    vpc_subnet_id: "{{ ec2_public_subnet.id }}"
     group_id: "{{ sg_cluster.group_id }}"
     assign_public_ip: yes
     count_tag:
-      Name: "k8s-node-{{ job_id }}"
+      Name: "k8s-node-{{ job_id | default('00') }}"
     exact_count: 2
   register: k8s_nodes
 
@@ -118,11 +120,13 @@
     region: "{{ aws_region }}"
     vpc_id: "{{ ec2_vpc.id }}"
     subnets:
-      - "{{ public_subnet.id }}"
+      - "{{ ec2_public_subnet.id }}"
     routes:
       - dest: 0.0.0.0/0
         gw: igw
       - dest: "{{ k8s_public_subnet }}"
+        gw: "{{ k8s_gateway.tagged_instances[0].id }}"
+      - dest: "{{ k8s_service_addresses }}"
         gw: "{{ k8s_gateway.tagged_instances[0].id }}"
 
 - name: Store the status of the cluster
@@ -130,9 +134,6 @@
 
 - name: Create inventory file
   template: src=inventory.j2 dest="{{ inventory_dir }}/inventory.cluster"
-
-- name: VPC status
-  template: src=vpc.j2 dest="{{ inventory_dir }}/vpc.status"
 
 - wait_for: host="{{ k8s_management.tagged_instances[0].public_dns_name }}" port=22
 

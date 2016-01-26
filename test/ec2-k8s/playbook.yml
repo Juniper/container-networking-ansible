@@ -11,7 +11,6 @@
   tags:
     - create
   vars:
-    job_id: 01
     # trusty hvm:ebs us-west-1
     ec2_image: ami-f898f698
 

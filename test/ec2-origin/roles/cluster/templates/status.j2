@@ -1,3 +1,10 @@
+[all:vars]
+ec2_vpc_id = "{{ ec2_vpc.id }}"
+ec2_public_subnet_id = "{{ ec2_public_subnet.id }}"
+ec2_private_subnet_id = "{{ ec2_private_subnet.id }}"
+opencontrail_public_subnet = {{ cluster_public_subnet }}
+opencontrail_service_addresses = {{ cluster_service_addresses }}
+
 [deployer]
 {{ origin_deployer.tagged_instances[0].public_dns_name }} id={{ origin_deployer.tagged_instances[0].id }} ansible_ssh_user={{ ssh_user }}
 

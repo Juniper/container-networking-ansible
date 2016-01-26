@@ -41,6 +41,7 @@ opencontrail_public_subnet = 192.168.254.0/24
 | Variable | Description | Default value |
 |----------|-------------|---------------|
 | opencontrail_public_subnet | IP subnet of the Public network | (mandatory) |
+| opencontrail_private_subnet | IP subnet for private IP addreses | optional |
 | opencontrail_http_proxy | Proxy used by kmod builder | optional |
 | opencontrail_dns_forwarder| DNS forwarder | optional |
 | opencontrail_use_systemd | TODO: Use systemd to start docker containers | true |

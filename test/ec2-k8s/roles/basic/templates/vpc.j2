@@ -1,9 +1,0 @@
----
-vpc:
-  id: {{ ec2_vpc.id }}
-  subnets:
-{% for subnet in ec2_vpc.subnets %}
-    - {{ subnet.id }}
-{% endfor %}
-  gateway:
-    id: {{ k8s_gateway.tagged_instances[0].id }}

@@ -11,8 +11,8 @@
 
 - name: IP addressing
   set_fact:
-    cluster_public_subnet: "172.{{ 16 + (workspace_id|int % 16) }}.0.0/24"
-    cluster_service_addresses: "172.{{ 32 + (workspace_id|int % 16) }}.0.0/16"
+    cluster_public_subnet: "{% if job_id is defined %}172.20.{{ 8 * (job_id|int % 32) }}.0/24{% else %}172.18.64.0/20{% endif %}"
+    cluster_service_addresses: "{% if job_id is defined %}10.{{ 160 + (job_id|int % 32) }}.0.0/16{% else %}10.65.0.0/16{% endif %}"
 
 - name: Deployer security-group
   ec2_group:
@@ -59,15 +59,15 @@
     image: "{{ ec2_image }}"
     key_name: k8s
     instance_tags:
-      Name: "origin-deployer-{{ workspace_id }}"
-      Cluster: "origin-ansible-{{ workspace_id }}"
+      Name: "origin-deployer-{{ job_id | default('00') }}"
+      Cluster: "origin-ansible-{{ job_id | default('00') }}"
     instance_type: t2.micro
     region: "{{ aws_region }}"
     vpc_subnet_id: "{{ ec2_public_subnet.id }}"
     group_id: "{{ sg_deployer.group_id }}"
     assign_public_ip: yes
     count_tag:
-      Name: "origin-deployer-{{ workspace_id }}"
+      Name: "origin-deployer-{{ job_id | default('00') }}"
     exact_count: 1
     wait: true
   register: origin_deployer
@@ -80,8 +80,8 @@
     image: "{{ ec2_image }}"
     key_name: k8s
     instance_tags:
-      Name: "origin-gateway-{{ workspace_id }}"
-      Cluster: "origin-ansible-{{ workspace_id }}"
+      Name: "origin-gateway-{{ job_id | default('00') }}"
+      Cluster: "origin-ansible-{{ job_id | default('00') }}"
     instance_type: m3.medium
     region: "{{ aws_region }}"
     vpc_subnet_id: "{{ ec2_public_subnet.id }}"
@@ -90,7 +90,7 @@
     source_dest_check: no
     wait: yes
     count_tag:
-      Name: "origin-gateway-{{ workspace_id }}"
+      Name: "origin-gateway-{{ job_id | default('00') }}"
     exact_count: 1
     volumes:
       - device_name: /dev/xvdf
@@ -104,14 +104,14 @@
     image: "{{ ec2_image }}"
     key_name: k8s
     instance_tags:
-      Name: "origin-master-{{ workspace_id }}"
-      Cluster: "origin-ansible-{{ workspace_id }}"
+      Name: "origin-master-{{ job_id | default('00') }}"
+      Cluster: "origin-ansible-{{ job_id | default('00') }}"
     instance_type: m3.large
     region: "{{ aws_region }}"
     vpc_subnet_id: "{{ ec2_private_subnet.id }}"
     group_id: "{{ sg_cluster.group_id }}"
     count_tag:
-      Name: "origin-master-{{ workspace_id }}"
+      Name: "origin-master-{{ job_id | default('00') }}"
     exact_count: 1
     volumes:
       - device_name: /dev/xvdf
@@ -128,14 +128,14 @@
     image: "{{ ec2_image }}"
     key_name: k8s
     instance_tags:
-      Name: "origin-node-{{ workspace_id }}"
-      Cluster: "origin-ansible-{{ workspace_id }}"
+      Name: "origin-node-{{ job_id | default('00') }}"
+      Cluster: "origin-ansible-{{ job_id | default('00') }}"
     instance_type: m3.medium
     region: "{{ aws_region }}"
     vpc_subnet_id: "{{ ec2_private_subnet.id }}"
     group_id: "{{ sg_cluster.group_id }}"
     count_tag:
-      Name: "origin-node-{{ workspace_id }}"
+      Name: "origin-node-{{ job_id | default('00') }}"
     exact_count: 2
     volumes:
       - device_name: /dev/xvdf
@@ -144,7 +144,6 @@
         volume_size: 80
   register: origin_nodes
 
-# TODO(prm): replace 172.30.0.0/16 by cluster_service_addresses
 - name: Update the vpc routing table (private subnet)
   ec2_vpc_rtb_update:
     region: "{{ aws_region }}"
@@ -152,7 +151,7 @@
     subnets:
       - "{{ ec2_private_subnet.id }}"
     routes:
-      - dest: 172.30.0.0/16
+      - dest: "{{ cluster_service_addresses }}"
         gw: "{{ origin_gateway.tagged_instances[0].id }}"
 
 - name: Store the status of the cluster

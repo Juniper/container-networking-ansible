@@ -6,8 +6,6 @@
     - cluster
   tags:
     - cluster
-  vars:
-    workspace_id: 01
 
 - hosts: jenkins-master
   gather_facts: False
