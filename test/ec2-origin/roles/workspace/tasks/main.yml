@@ -35,8 +35,7 @@
   with_items:
     - opencontrail_validate.py
     - deployment_config_set.py
-    - rails-postgresql.patch
-
+    - rails-postgresql.patch.j2
 
 - copy: src=ansible.cfg dest="{{ path_src }}/openshift-ansible"
 

@@ -25,6 +25,8 @@ cli_docker_additional_registries=registry.{{ aws_region }}.dev.opencontrail.org:
 use_openshift_sdn = false
 sdn_network_plugin_name = opencontrail
 
+openshift_master_portal_net = {{ cluster_service_addresses }}
+
 [opencontrail:children]
 masters
 nodes
@@ -32,6 +34,7 @@ gateways
  
 [opencontrail:vars]
 opencontrail_public_subnet={{ cluster_public_subnet }}
+opencontrail_private_subnet=10.32.0.0/16
 opencontrail_http_proxy=http://web-proxy.{{ aws_region }}.dev.opencontrail.org:3128
 opencontrail_kube_release=origin-1.1
 opencontrail_dns_forwarder={{ origin_deployer.tagged_instances[0].private_ip }}

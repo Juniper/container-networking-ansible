@@ -22,8 +22,11 @@
     - name: Copy example file
       command: cp /usr/share/openshift/examples/quickstart-templates/rails-postgresql.json "{{ tmp_dir }}"
 
+    - name: Copy rails-postgresql.patch
+      template: src=rails-postgresql.patch.j2 dest="{{ tmp_dir }}/rails-postgresql.patch"
+
     - name: Patch example
-      patch: src=rails-postgresql.patch basedir="{{ tmp_dir }}"
+      patch: src="{{ tmp_dir }}/rails-postgresql.patch" remote_src=true basedir="{{ tmp_dir }}"
 
     - name: Switch to test project
       command: oc project test

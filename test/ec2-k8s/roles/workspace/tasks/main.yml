@@ -58,6 +58,20 @@
     regexp: "^networking: "
     line: "networking: opencontrail"
 
+# ansible 2.x changed variable precendence such that group_vars has higher precendence than
+# variables declared in the inventory. So copy the value from inventory to group_vars.
+- name: Get the value of kube_service_addressses from the inventory file
+  command: awk '{ if (match($0, /^kube_service_addressses\s*=\s*(.*)/, groups) != 0) { print groups[1] } }' inventory
+  register: _inventory_svc_address
+  when: ansible_version.major >= 2
+
+- name: Set kube_service_addressses
+  lineinfile:
+    dest: "{{ path_src }}/contrib/ansible/group_vars/all.yml"
+    regexp: "^kube_service_addressses: "
+    line: "kube_service_addressses: {{ _inventory_svc_address.stdout }}"
+  when: ansible_version.major >= 2
+
 - name: Patch cluster.yml
   patch:
     src: cluster.patch

@@ -6,8 +6,8 @@
              "uri": "${SOURCE_REPOSITORY_URL}",
 -            "ref": "${SOURCE_REPOSITORY_REF}"
 +            "ref": "${SOURCE_REPOSITORY_REF}",
-+            "httpProxy": "http://172.30.0.2:3128",
-+            "httpsProxy": "http://172.30.0.2:3128"
++            "httpProxy": "http://{{ openshift_master_portal_net | ipaddr('net') | ipaddr(2) | ipaddr('address')}}:3128",
++            "httpsProxy": "http://{{ openshift_master_portal_net | ipaddr('net') | ipaddr(2) | ipaddr('address')}}:3128"
            },
            "contextDir": "${CONTEXT_DIR}"
          },
@@ -20,11 +20,11 @@
 +            "env": [
 +                {
 +                    "name": "http_proxy",
-+                    "value": "http://172.30.0.2:3128"
++                    "value": "http://{{ openshift_master_portal_net | ipaddr('net') | ipaddr(2) | ipaddr('address')}}:3128"
 +                },
 +                {
 +                    "name": "https_proxy",
-+                    "value": "http://172.30.0.2:3128"
++                    "value": "http://{{ openshift_master_portal_net | ipaddr('net') | ipaddr(2) | ipaddr('address')}}:3128"
 +                }
 +            ]
            }

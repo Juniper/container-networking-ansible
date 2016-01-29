@@ -8,4 +8,4 @@ path_tmp: /home/ubuntu/tmp
 # path used to store ansible playbook in management host
 path_src: /home/ubuntu/src
 
-k8s_public_subnet: 172.16.0.0/24
+

@@ -14,12 +14,54 @@ from ansible.module_utils.ec2 import *
 import boto.vpc
 
 
+def rtb_update(connection, rtb, routes):
+    """ Update the table in order to ensure that the route is present """
+    changed = False
+    for route in routes:
+        if route.get('gw') == 'igw':
+            continue
+
+        existing_rt = filter(
+            lambda x: x.destination_cidr_block == route['dest'], rtb.routes)
+
+        if len(existing_rt) > 0:
+            if existing_rt[0].instance_id == route.get('gw'):
+                continue
+            success = connection.replace_route(
+                rtb.id, route['dest'], instance_id=route.get('gw'))
+        else:
+            success = connection.create_route(
+                rtb.id, route['dest'], instance_id=route.get('gw'))
+        if success:
+            changed = True
+    return changed
+
+
+def rtb_delete(connection, rtb, routes):
+    """ Delete a set of routes from the table """
+    changed = False
+    for route in routes:
+        if route.get('gw') == 'igw':
+            continue
+
+        existing_rt = filter(
+            lambda x: x.destination_cidr_block == route['dest'], rtb.routes)
+        if len(existing_rt) == 0:
+            continue
+
+        connection.delete_route(rtb.id, route['dest'])
+        changed = True
+
+    return changed
+
+
 def main():
     argument_spec = ec2_argument_spec()
     argument_spec.update(dict(
         vpc_id=dict(required=True),
         subnets=dict(type='list', required=True),
-        routes=dict(type='list')
+        routes=dict(type='list'),
+        state=dict(choices=['present', 'absent'], default='present')
     ))
 
     module = AnsibleModule(argument_spec=argument_spec)
@@ -58,23 +100,10 @@ def main():
         rtb = selected_tables[0]
 
     changed = False
-    for route in module.params.get('routes'):
-        if route.get('gw') == 'igw':
-            continue
-
-        existing_rt = filter(
-            lambda x: x.destination_cidr_block == route['dest'], rtb.routes)
-
-        if len(existing_rt) > 0:
-            if existing_rt[0].instance_id == route.get('gw'):
-                continue
-            success = connection.replace_route(
-                rtb.id, route['dest'], instance_id=route.get('gw'))
-        else:
-            success = connection.create_route(
-                rtb.id, route['dest'], instance_id=route.get('gw'))
-        if success:
-            changed = True
+    if module.params.get('state') == 'present':
+        changed = rtb_update(connection, rtb, module.params.get('routes'))
+    elif module.params.get('state') == 'absent':
+        changed = rtb_delete(connection, rtb, module.params.get('routes'))
 
     module.exit_json(changed=changed, rtb_id=rtb.id)
 

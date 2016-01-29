@@ -27,6 +27,33 @@ def inventory_match_item(text) {
     matcher ? matcher[0] : null
 }
 
+
+def getMasterIP() {
+    def inventory = readFile('inventory.cluster')
+
+    def section = false
+    def address
+
+    for (line in inventory.split('\n')) {
+        if (line == '[masters]') {
+           section = true
+           continue
+        }
+        if (section) {
+           address = inventory_match_ssh_host(line)
+           break
+        }
+    }
+    return address
+}
+
+@NonCPS
+def inventory_match_ssh_host(text) {
+    def matcher = (text =~ /^([\w-_\.]+) ansible_ssh_host=([0-9\.]+)/)
+    matcher ? matcher[0][2] : null
+}
+
+
 def k8s_deploy(deployer) {
     def playbooks = [
         'resolution.yml',
@@ -98,10 +125,28 @@ def k8s_run_examples(deployer) {
 }
 
 def guestbook_status(deployer) {
+
+    def master = getMasterIP()
+    echo "master: ${master}"
+
+    def svcAddress
+
+    retry(6) {
+        sh "ssh ${ssh_options} ubuntu@${deployer} -- ssh ${master} kubectl get svc guestbook > guestbook_svc.status"
+        def svcStatus = readFile('guestbook_svc.status')
+        svcAddress = svc_external_ip_address(svcStatus)
+        if (!svcAddress) {
+            error "ExternalIP is null"
+            sleep 10L
+        }
+    }
+
+    echo "guestbook ExternalIP: ${svcAddress}"
+
     retry(15) {
         def status
         try {
-            sh "ssh ${ssh_options} ubuntu@${deployer} curl http://172.16.0.252:3000/info > guestbook.status"
+            sh "ssh ${ssh_options} ubuntu@${deployer} curl http://${svcAddress}:3000/info > guestbook.status"
             status = readFile('guestbook.status')
         } catch (AbortException ex) {
             echo "${ex}"
@@ -114,6 +159,12 @@ def guestbook_status(deployer) {
             error("redis slaves: ${slaves}")
         }
     }
+}
+
+@NonCPS
+def svc_external_ip_address(text) {
+    def matcher = (text =~ /guestbook\s+([0-9\.]+)\s+(([0-9]{1,3}\.){3}[0-9]{1,3})/)
+    matcher ? matcher[0][2] : null
 }
 
 @NonCPS
@@ -171,7 +222,7 @@ test_ec2_openshift_basic = {
         dir('test/ec2-origin') {
             withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'k8s-provisioner', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY']]) {
                 // tags: cluster, key-data, deployer-install, workspace
-                sh "ansible-playbook -i localhost playbook.yml --tags=cluster -e workspace_id=${env.BUILD_NUMBER}"
+                sh "ansible-playbook -i localhost playbook.yml --tags=cluster -e job_id=${env.BUILD_NUMBER}"
             }
 
             sh "ansible-playbook -i localhost key-data.yml"
@@ -180,7 +231,7 @@ test_ec2_openshift_basic = {
 
             try {
                 sshagent(credentials: ["k8s"]) {
-                    sh "ansible-playbook -i cluster.status playbook.yml --tags=deployer-install,workspace -e workspace_id=${env.BUILD_NUMBER}"
+                    sh "ansible-playbook -i cluster.status playbook.yml --tags=deployer-install,workspace -e job_id=${env.BUILD_NUMBER}"
                     origin_deploy(deployer)
                 }
             } catch(ex) {

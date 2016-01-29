@@ -332,7 +332,8 @@ def test_application_status(master, gateway):
                 print 'pod %s Failed' % item['metadata']['name']
                 return False
             elif item['status']['phase'] == 'Running':
-                if item['metadata']['name'].endswith('-build'):
+                if (item['metadata']['name'].endswith('-build') or
+                   item['metadata']['name'].endswith('-deploy')):
                     builder += 1
                     continue
                 run_count += 1

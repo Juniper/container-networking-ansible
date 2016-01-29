@@ -1,3 +1,9 @@
+[all:vars]
+ec2_vpc_id = {{ ec2_vpc.id }}
+ec2_public_subnet_id = {{ ec2_public_subnet.id }}
+opencontrail_public_subnet = {{ k8s_public_subnet }}
+opencontrail_service_addresses = {{ k8s_service_addresses }}
+
 [deployer]
 {{ k8s_management.tagged_instances[0].public_dns_name }} id={{ k8s_management.tagged_instances[0].id }} ansible_ssh_user=ubuntu
 

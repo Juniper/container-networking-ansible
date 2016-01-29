@@ -1,0 +1,23 @@
+- name: Cleanup routes from the VPC routing table
+  ec2_vpc_rtb_update:
+    region: "{{ aws_region }}"
+    vpc_id: "{{ ec2_vpc_id }}"
+    state: absent
+    subnets:
+      - "{{ ec2_public_subnet_id }}"
+    routes:
+      - dest: "{{ opencontrail_public_subnet }}"
+      - dest: "{{ opencontrail_service_addresses }}"
+
+- name: Instance id list
+  set_fact:
+    hosts: "{{ groups['all'] | difference(['localhost']) }}"
+- set_fact:
+    instance_ids: "{% set x = [] %}{% for host in hosts %}{% set _ = x.append(hostvars[host]['id']) %}{% endfor %}{{ x }}"
+
+- name: Delete virtual machines
+  ec2:
+    state: absent
+    region: "{{ aws_region }}"
+    instance_ids: "{{ hostvars[item].id }}"
+  with_items: "{{ hosts }}"
