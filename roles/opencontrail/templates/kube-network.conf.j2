@@ -6,7 +6,7 @@ service-cluster-ip-range = {{ opencontrail_all_service_addresses }}
 
 [opencontrail]
 public-ip-range = {{ opencontrail_public_subnet }}
-{% if opencontrail_private_subnet is defined %}
+{% if opencontrail_private_subnet is defined and opencontrail_private_subnet != "" %}
 private-ip-range = {{ opencontrail_private_subnet }}
 {% endif %}
 cluster-service = {{ opencontrail_cluster_services_namespace }}/default
