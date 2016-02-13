@@ -78,5 +78,5 @@
   command: >
     docker run --net=host opencontrail/config:2.20 /usr/share/contrail-utils/provision_control.py
     --api_server_ip localhost --api_server_port 8082
-    --host_name "{{ ansible_hostname }}" --host_ip "{{ opencontrail_host_address }}"
+    --host_name "{{ ansible_nodename }}" --host_ip "{{ opencontrail_host_address }}"
     --router_asn 64512 --oper add
