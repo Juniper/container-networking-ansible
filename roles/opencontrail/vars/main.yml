@@ -14,3 +14,6 @@ opencontrail_host_kernel_devel: "{{ ansible_kernel | regex_replace('([0-9.]+)-([
 opencontrail_host_kernel_build_dir: "/tmp/.ansible/build/{{ opencontrail_host_kernel_tag }}"
 opencontrail_host_kernel_install_dir: "/tmp/.ansible/install/{{ opencontrail_host_kernel_tag }}"
 opencontrail_host_kernel_artifact_tar: "/tmp/.ansible/opencontrail-vrouter-{{ opencontrail_host_kernel_tag }}.tgz"
+
+# Allow the system to have a way to override arp discovery of vrouters
+opencontrail_no_arp: false

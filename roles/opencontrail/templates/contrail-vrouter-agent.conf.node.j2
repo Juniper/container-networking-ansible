@@ -8,6 +8,9 @@ physical_interface={{ opencontrail_host_interface }}
 {% if opencontrail_host_gateway -%}
 gateway={{ opencontrail_host_gateway }}
 {% endif -%}
+{% if opencontrail_no_arp -%}
+subnet_hosts_resolvable=0
+{% endif -%}
 
 [HYPERVISOR]
 type=kvm
