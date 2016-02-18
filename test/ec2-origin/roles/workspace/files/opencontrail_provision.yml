@@ -26,14 +26,6 @@
         dest: /etc/hosts
         line: '{{ ansible_default_ipv4.address }} kubernetes.default.svc'
 
-    - name: Use kubernetes.default.svc as the cluster address
-      replace:
-        dest: /etc/origin/master/openshift-master.kubeconfig
-        regexp: 'https://ip-[\w\.\-]+\.compute\.internal:8443'
-        replace: 'https://kubernetes.default.svc:8443'
-      notify:
-        - restart openshift-master
-
     - name: openshift-master proxy configuration (noproxy)
       lineinfile:
         dest: /etc/sysconfig/origin-master
