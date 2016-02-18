@@ -47,7 +47,7 @@
     --api_server_ip localhost --api_server_port 8082
     --linklocal_service_name kubernetes-ssl
     --linklocal_service_ip {{ opencontrail_all_service_addresses | ipaddr('net') | ipaddr(1) | ipaddr('address')}}
-    --linklocal_service_port {{ opencontrail_kube_master_port }}
+    --linklocal_service_port 443
     --ipfabric_service_ip "{{ opencontrail_host_address }}"
     --ipfabric_service_port {{ opencontrail_kube_master_port }} --oper add
 
