@@ -2,6 +2,12 @@
     - masters
   sudo: yes
   tasks:
+    - name: Workaround image-stream download problem
+      command: oc -n openshift delete is --all
+
+    - name: Recreate image-streams
+      command: oc -n openshift create -f /usr/share/openshift/examples/image-streams/image-streams-centos7.json
+
     - file: path="{{ tmp_dir }}" state=directory
 
     - name: Create OpenShift Registry template
