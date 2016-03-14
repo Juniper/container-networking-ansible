@@ -27,6 +27,8 @@ sdn_network_plugin_name = opencontrail
 
 openshift_master_portal_net = {{ cluster_service_addresses }}
 
+openshift_pkg_version=-1.1.3
+
 [opencontrail:children]
 masters
 nodes
@@ -36,7 +38,7 @@ gateways
 opencontrail_public_subnet={{ cluster_public_subnet }}
 opencontrail_private_subnet=10.32.0.0/16
 opencontrail_http_proxy=http://web-proxy.{{ aws_region }}.dev.opencontrail.org:3128
-opencontrail_kube_release=origin-1.1
+opencontrail_kube_release=origin-1.1.3
 opencontrail_dns_forwarder={{ origin_deployer.tagged_instances[0].private_ip }}
 opencontail_gateway_extra_infra_prefixes={{ ec2_private_subnet.cidr_block }}
 
